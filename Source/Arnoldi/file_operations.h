@@ -8,12 +8,12 @@
 #include "Macros.h"
 
 
-void print_vector(const char *f_name, int N, double *vec);
-void print_vector(const char *f_name, int N, double complex *vec);
-void print_matrix(const char *f_name, int Row, int Col, double *matrix);
-void print_matrix(const char *f_name, int Row, int Col, double complex *matrix);
-int read_matrix(const char *f_name,  int Row, int Col,  double *matrix);
-int read_vector(const char *f_name,  int N,  double *vec);
+void print_vector(const char *f_name, int N, real *vec);
+void print_vector(const char *f_name, int N, real complex *vec);
+void print_matrix(const char *f_name, int Row, int Col, real *matrix);
+void print_matrix(const char *f_name, int Row, int Col, real complex *matrix);
+int read_matrix(const char *f_name,  int Row, int Col,  real *matrix);
+int read_vector(const char *f_name,  int N,  real *vec);
 
 
 

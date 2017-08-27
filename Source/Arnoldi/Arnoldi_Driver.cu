@@ -28,9 +28,9 @@
 
 void Arnoldi_driver(cublasHandle_t handle, int N, user_map_vector Axb, void *user_struct, real *V_d, real *H, real *vec_f_d, int k, int m, real *vec_v_d, real *vec_w_d, real *vec_c_d, real *vec_h_d, real *vec_h){
 	
-	real tolerance=1.0e-12;
+	real tolerance=5.0e-12;
 	#ifdef real_float
-		tolerance=1.0e-8;
+		tolerance=5.0e-8;
 	#endif
 	
 	if(k==0){
@@ -65,7 +65,7 @@ void Arnoldi_driver(cublasHandle_t handle, int N, user_map_vector Axb, void *use
        		c=Arnoldi::vector_dot_product_GPU(handle, N, vec_v_d, vec_f_d);    //(vec_v,vec_f)
        		Arnoldi::vectors_add_GPU(handle, N, -c, vec_v_d, vec_f_d);   //vec_f=vec_f-c*vec_v
         	alpha+=c;  
-        	if(it>10){
+        	if(it>12){
         		printf("\nArnoldi orthogonalization failed at k==0: %.05e\n", c);
         		break;
         	}
@@ -109,7 +109,7 @@ void Arnoldi_driver(cublasHandle_t handle, int N, user_map_vector Axb, void *use
         	Arnoldi::matrixMultVector_part_GPU(handle, N, V_d, m, -1.0, vec_c_d, j+1, 1.0, vec_f_d);
         	Arnoldi::vectors_add_GPU(handle, m, 1.0, vec_c_d, vec_h_d);
        		c=Arnoldi::vector_norm2_GPU(handle, m, vec_c_d);                                
-          	if(it>10){
+          	if(it>12){
             	printf("\nArnoldi orthogonalization failed: %.05e at %i\n", c, j);
             	break;
        		}

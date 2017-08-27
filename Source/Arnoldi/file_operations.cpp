@@ -2,13 +2,13 @@
 
 
 
-void print_vector(const char *f_name, int N, double *vec){
+void print_vector(const char *f_name, int N, real *vec){
 		FILE *stream;
 		stream=fopen(f_name, "w" );
 
 		for (int i = 0; i < N; ++i)
 		 {
-		 	fprintf(stream, "%.16le\n",vec[i]);
+		 	fprintf(stream, "%.16le\n",(double)vec[i]);
 		 } 
 
 		fclose(stream);
@@ -17,13 +17,13 @@ void print_vector(const char *f_name, int N, double *vec){
 }
 
 
-void print_vector(const char *f_name, int N, double complex *vec){
+void print_vector(const char *f_name, int N, real complex *vec){
 		FILE *stream;
 		stream=fopen(f_name, "w" );
 
 		for (int i = 0; i < N; ++i)
 		 {
-		 	fprintf(stream, "%.16le+%.16lei\n",vec[i]);
+		 	fprintf(stream, "%.16le+%.16lei\n",(double complex)vec[i]);
 		 } 
 
 		fclose(stream);
@@ -31,7 +31,7 @@ void print_vector(const char *f_name, int N, double complex *vec){
 
 }
 
-void print_matrix(const char *f_name, int Row, int Col, double *matrix){
+void print_matrix(const char *f_name, int Row, int Col, real *matrix){
 	int N=Col;
 	FILE *stream;
 	stream=fopen(f_name, "w" );
@@ -40,7 +40,7 @@ void print_matrix(const char *f_name, int Row, int Col, double *matrix){
 		for(int j=0;j<Col;j++)
 		{
 	 	
-		 	fprintf(stream, "%.16le ",matrix[I2(i,j,Row)]);
+		 	fprintf(stream, "%.16le ",(double) matrix[I2(i,j,Row)]);
 	 	}
 		fprintf(stream, "\n");
 	} 
@@ -50,7 +50,7 @@ void print_matrix(const char *f_name, int Row, int Col, double *matrix){
 
 }
 
-void print_matrix(const char *f_name, int Row, int Col, double complex *matrix){
+void print_matrix(const char *f_name, int Row, int Col, real complex *matrix){
 	int N=Col;
 	FILE *stream;
 	stream=fopen(f_name, "w" );
@@ -61,7 +61,7 @@ void print_matrix(const char *f_name, int Row, int Col, double complex *matrix){
 	 		//if(cimag(matrix[I2(i,j)])<0.0)
 			// 	fprintf(stream, "%.16le%.16leI ",matrix[I2(i,j)]);
 			//else
-			 	fprintf(stream, "%.16le+%.16lei ",matrix[I2(i,j,Row)]);				
+			 	fprintf(stream, "%.16le+%.16lei ",(double complex)matrix[I2(i,j,Row)]);				
 	 	}
 		fprintf(stream, "\n");
 	} 
@@ -72,7 +72,7 @@ void print_matrix(const char *f_name, int Row, int Col, double complex *matrix){
 }
 
 
-int read_matrix(const char *f_name,  int Row, int Col,  double *matrix){
+int read_matrix(const char *f_name,  int Row, int Col,  real *matrix){
 
 	FILE *stream;
 	stream=fopen(f_name, "r" );
@@ -87,7 +87,7 @@ int read_matrix(const char *f_name,  int Row, int Col,  double *matrix){
 			{
 				 double val=0;	
 				 fscanf(stream, "%le",&val);				
-				 matrix[I2(i,j,Row)]=val;
+				 matrix[I2(i,j,Row)]=(real)val;
 		 	}
 			
 		} 
@@ -98,7 +98,7 @@ int read_matrix(const char *f_name,  int Row, int Col,  double *matrix){
 
 }
 
-int read_vector(const char *f_name,  int N,  double *vec){
+int read_vector(const char *f_name,  int N,  real *vec){
 
 	FILE *stream;
 	stream=fopen(f_name, "r" );
@@ -111,7 +111,7 @@ int read_vector(const char *f_name,  int N,  double *vec){
 		{
 			double val=0;	
 			fscanf(stream, "%le",&val);				
-			vec[i]=val;			
+			vec[i]=(real)val;			
 		} 
 	
 		fclose(stream);

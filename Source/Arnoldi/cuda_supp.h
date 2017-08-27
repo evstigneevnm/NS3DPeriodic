@@ -40,6 +40,7 @@ void matrixMultVector_part_GPU(cublasHandle_t handle, int RowA, real *A, int Col
 void matrixDotVector_GPU(cublasHandle_t handle, int RowA, real *A, int ColA, real alpha, real *x, real beta, real *res);
 void matrixDotVector_part_GPU(cublasHandle_t handle, int RowA, real *A, int ColA, real alpha, real *x, int part_Cols, real beta, real *res);
 void set_vector_value_GPU(int N, real val, real *vec);
+void set_initial_Krylov_vector_value_GPU(int N, real *vec);
 void set_vector_inverce_GPU(int N, real *vec);
 void matrixMultMatrix_GPU(cublasHandle_t handle, int RowAC, int ColBC, int ColA, real *A, real alpha, real *B, real beta, real *C);
 void matrixTMultMatrix_GPU(cublasHandle_t handle, int RowAC, int ColBC, int ColA, real *A, real alpha, real *B, real beta, real *C);

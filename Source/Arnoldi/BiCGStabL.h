@@ -1,3 +1,6 @@
+//WARNING: declaration of BiCGStab is defined in file "Matrix_Vector_emulator.h" due to cross declaration!
+//In this project this file is void
+
 #ifndef __H_BICGSTABL_H__
 #define __H_BICGSTABL_H__
 

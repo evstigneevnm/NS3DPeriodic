@@ -414,6 +414,19 @@ __global__ void set_vector_value_kernel(int N, real val, real *vec){
 }
 
 
+__global__ void set_initial_Krylov_vector_value_kernel(int N, real *vec){
+	
+	int i = blockIdx.x * blockDim.x + threadIdx.x;	
+
+	if(i<N){
+		vec[i]=0.0;
+	}
+	vec[0]=1.0;
+	vec[N/4]=3.0;
+	vec[N/2]=0.5;
+
+}
+
 
 void set_vector_value_GPU(int N, real val, real *vec){
 
@@ -424,6 +437,22 @@ void set_vector_value_GPU(int N, real val, real *vec){
 	set_vector_value_kernel<<< blocks, threads>>>(N, val,vec);
 
 }
+
+
+
+
+void set_initial_Krylov_vector_value_GPU(int N, real *vec){
+
+	dim3 threads(BLOCKSIZE);
+	int blocks_x=(N+BLOCKSIZE)/BLOCKSIZE;
+	dim3 blocks(blocks_x);
+	
+	set_initial_Krylov_vector_value_kernel<<< blocks, threads>>>(N, vec);
+
+
+}
+
+
 
 __global__ void set_vector_inverce_kernel(int N, real *vec){
 

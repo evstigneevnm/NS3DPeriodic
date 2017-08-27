@@ -492,7 +492,7 @@ Results:
 	real *Z=new real [N*N];
 */
 
-	print_matrix("Ht.dat", N, N, H);
+	//print_matrix("Ht.dat", N, N, H);
 	char JOB='S';
 	char COMPZ='I';
 	int ILO=1;
@@ -508,9 +508,10 @@ Results:
 	int LWORK = 4*N; 
 	real *WORK=new real[LWORK];
 
-	//DEBUG: change /*Ht*/ ... in funcction call
+	//DEBUG: change /*Ht*/ ... in function call
 
-	dhseqr_(&JOB, &COMPZ, &N, &ILO, 
+	#ifdef real_double
+		dhseqr_(&JOB, &COMPZ, &N, &ILO, 
 					&IHI, H	/*Ht*/,
 					&LDH, 
 					WR, WI,
@@ -519,11 +520,27 @@ Results:
 					&LWORK, &INFO);
 
 
-	if(INFO!=0){
-		printf("DHSEQR: Argument %i has an illegal value. Aborting.\n", INFO);
-		exit(-1);
-	}
-/*
+		if(INFO!=0){
+			printf("DHSEQR: Argument %i has an illegal value. Aborting.\n", INFO);
+			exit(-1);
+		}
+	#endif
+	#ifdef real_float
+		shseqr_(&JOB, &COMPZ, &N, &ILO, 
+					&IHI, H	/*Ht*/,
+					&LDH, 
+					WR, WI,
+					/*Z*/ Q, &LDZ,
+					WORK,
+					&LWORK, &INFO);
+
+
+		if(INFO!=0){
+			printf("SHSEQR: Argument %i has an illegal value. Aborting.\n", INFO);
+			exit(-1);
+		}
+	#endif
+	/*
 	//DEBUG!!!
 	//transpose_matrix(N, HT, Ht);
 	print_matrix("T.dat", N, N, Ht);
