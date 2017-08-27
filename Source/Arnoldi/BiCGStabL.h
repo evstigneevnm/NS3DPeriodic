@@ -15,7 +15,7 @@
 #include "Matrix_Vector_emulator.h"
 
 
-int BiCGStabL(int L, int N, user_map_vector Axb, void *user_struct, real *x, real* RHS, real *tol, int *Iter, bool verbose, unsigned int skip=500);
+int BiCGStabL(cublasHandle_t handle, int L, int N, user_map_vector Axb, void *user_struct, real *x, real* RHS, real *tol, int *Iter, bool verbose, unsigned int skip=500);
 	
 
 

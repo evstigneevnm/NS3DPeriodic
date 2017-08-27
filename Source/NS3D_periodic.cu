@@ -132,6 +132,71 @@ typedef struct NS_RK3_Call_parameters_Struture{
 
 
 
+typedef struct NS_RK3_inverce_Exponent_Call_parameters_Struture{ 
+		dim3 dimGrid;
+		dim3 dimBlock;
+		dim3 dimGrid_C;
+		dim3 dimBlock_C;
+		real dx;
+		real dy; 
+		real dz;
+		real dt;
+		real Re;
+		int Nx;
+		int Ny;
+		int Nz;
+		int Mz;
+		cudaComplex *ux_hat_d;
+		cudaComplex *uy_hat_d;
+		cudaComplex *uz_hat_d;
+		cudaComplex *vx_hat_d;
+		cudaComplex *vy_hat_d;
+		cudaComplex *vz_hat_d;
+		cudaComplex *ux_hat_d_1;
+		cudaComplex *uy_hat_d_1;
+		cudaComplex *uz_hat_d_1;
+		cudaComplex *vx_hat_d_1;
+		cudaComplex *vy_hat_d_1;
+		cudaComplex *vz_hat_d_1;
+		cudaComplex *ux_hat_d_2;
+		cudaComplex *uy_hat_d_2;
+		cudaComplex *uz_hat_d_2;
+		cudaComplex *ux_hat_d_3;
+		cudaComplex *uy_hat_d_3;
+		cudaComplex *uz_hat_d_3;
+		cudaComplex *fx_hat_d;
+		cudaComplex *fy_hat_d;
+		cudaComplex *fz_hat_d;
+		cudaComplex *Qx_hat_d;
+		cudaComplex *Qy_hat_d;
+		cudaComplex *Qz_hat_d;
+		cudaComplex *div_hat_d;
+		real* kx_nabla_d;
+		real* ky_nabla_d;
+		real *kz_nabla_d;
+		real *din_diffusion_d;
+		real *din_poisson_d;
+		real *AM_11_d;
+		real *AM_22_d;
+		real *AM_33_d;
+		real *AM_12_d;
+		real *AM_13_d;
+		real *AM_23_d;
+		int Timesteps_period;
+
+		// real exponent shifting
+		real shift_real;
+
+		//for BiCGStab(L):
+		int BiCG_L;
+		real BiCG_tol;
+		int BiCG_Iter;
+		cublasHandle_t handle;
+} struct_NS3D_RK3_iExp_Call;
+
+
+
+
 //kernel to make NS arrays from Arnoldi vector
 __global__ void copy_vectors_kernel_3N(int N, real *vec_source, real *vec_dest){
 
@@ -232,19 +297,35 @@ __global__ void A_vector_from_velocities_kernel(int N, cudaComplex *vx_hat_d, cu
 }
 
 
-__global__ void A_vector_from_velocities_reduced_kernel(int N, cudaComplex *vx_hat_d, cudaComplex *vy_hat_d, cudaComplex *vz_hat_d, real *vec_source){
+__global__ void A_vector_from_velocities_reduced_kernel(int N, cudaComplex *vx_hat_d, cudaComplex *vy_hat_d, cudaComplex *vz_hat_d, real *vec_dest){
 
 	int i = blockIdx.x * blockDim.x + threadIdx.x;	
 	//assume that size of vec_source is (N-1)*3=3*N-3. these omitted 3 elements are zero Fourier components.
 
 
 	if(i<(N-1)){
-		vec_source[i]=vx_hat_d[i+1].y;
-		vec_source[i+(N-1)]=vy_hat_d[i+1].y;
-		vec_source[i+2*(N-1)]=vz_hat_d[i+1].y;
+		vec_dest[i]=vx_hat_d[i+1].y;
+		vec_dest[i+(N-1)]=vy_hat_d[i+1].y;
+		vec_dest[i+2*(N-1)]=vz_hat_d[i+1].y;
 	}
 
 }
+
+__global__ void A_vector_from_velocities_reduced_shifted_kernel(int N, real *vec_source, cudaComplex *vx_hat_d, cudaComplex *vy_hat_d, cudaComplex *vz_hat_d, real *vec_dest, real shift_real){
+
+	int i = blockIdx.x * blockDim.x + threadIdx.x;	
+	//assume that size of vec_source is (N-1)*3=3*N-3. these omitted 3 elements are zero Fourier components.
+
+
+	if(i<(N-1)){
+		vec_dest[i]=vx_hat_d[i+1].y-shift_real*vec_source[i];
+		vec_dest[i+(N-1)]=vy_hat_d[i+1].y-shift_real*vec_source[i+(N-1)];
+		vec_dest[i+2*(N-1)]=vz_hat_d[i+1].y-shift_real*vec_source[i+2*(N-1)];
+	}
+
+}
+
+
 
 void NSCallMatrixVector(struct_NS3D_RK3_Call *SC, double * vec_f_in, double * vec_f_out){
 
@@ -275,16 +356,15 @@ void NSCallMatrixVector_reduced(struct_NS3D_RK3_Call *SC, double * vec_f_in, dou
 	int blocks_x=(N_Arnoldi+BLOCKSIZE)/BLOCKSIZE;
 	dim3 blocks(blocks_x);
 
-	//copy_vectors_kernel_3N<<< blocks, threads>>>(N_Arnoldi, vec_f_in, vec_f_out);
 
-	//velocities_from_A_vector_kernel<<< blocks, threads>>>(N_Arnoldi, vec_f_in, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d);
 	velocities_from_A_vector_reduced_kernel<<< blocks, threads>>>(N_Arnoldi, vec_f_in, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d);
-	//check_nans_kernel("F_in", N_Arnoldi*3, vec_f_in);
-
+	
 	RK3_SSP_UV_RHS(SC->dimGrid, SC->dimBlock, SC->dimGrid_C, SC->dimBlock_C, SC->dx, SC->dy, SC->dz, SC->dt, SC->Re, SC->Nx, SC->Ny, SC->Nz, SC->Mz, SC->ux_hat_d, SC->uy_hat_d, SC->uz_hat_d,  SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d, SC->ux_hat_d_1, SC->uy_hat_d_1, SC->uz_hat_d_1,  SC->ux_hat_d_2, SC->uy_hat_d_2, SC->uz_hat_d_2,  SC->ux_hat_d_3, SC->uy_hat_d_3, SC->uz_hat_d_3,  SC->fx_hat_d, SC->fy_hat_d, SC->fz_hat_d, SC->Qx_hat_d, SC->Qy_hat_d, SC->Qz_hat_d, SC->div_hat_d, SC->kx_nabla_d,  SC->ky_nabla_d, SC->kz_nabla_d, SC->din_diffusion_d, SC->din_poisson_d, SC->AM_11_d, SC->AM_22_d, SC->AM_33_d,  SC->AM_12_d, SC->AM_13_d, SC->AM_23_d);
 	
+	//modify to apply real shift for now
 	A_vector_from_velocities_reduced_kernel<<< blocks, threads>>>(N_Arnoldi, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d, vec_f_out);
-	//check_nans_kernel("F_out", N_Arnoldi*3, vec_f_out);
+		
+
 
 }
 
@@ -317,6 +397,75 @@ void NSCallMatrixVector_exponential(struct_NS3D_RK3_Call *SC, double * vec_f_in,
 	printf(".");
 	fflush(stdout);
 }
+
+
+void NSCallMatrixVector_exponential_reduced(struct_NS3D_RK3_iExp_Call *SC, double * vec_f_in, double * vec_f_out){
+
+
+	int N_Arnoldi=(SC->Nx)*(SC->Ny)*(SC->Mz);
+	dim3 threads(BLOCKSIZE);
+	int blocks_x=(N_Arnoldi+BLOCKSIZE)/BLOCKSIZE;
+	dim3 blocks(blocks_x);
+
+	velocities_from_A_vector_reduced_kernel<<< blocks, threads>>>(N_Arnoldi, vec_f_in, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d);
+
+	int Timesteps_period=SC->Timesteps_period;
+
+	for(int tt=0;tt<Timesteps_period;tt++){
+
+
+		RK3_SSP_UV(SC->dimGrid, SC->dimBlock, SC->dimGrid_C, SC->dimBlock_C, SC->dx, SC->dy, SC->dz, SC->dt, SC->Re, SC->Nx, SC->Ny, SC->Nz, SC->Mz, SC->ux_hat_d, SC->uy_hat_d, SC->uz_hat_d,  SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d, SC->ux_hat_d_1, SC->uy_hat_d_1, SC->uz_hat_d_1,  SC->vx_hat_d_1, SC->vy_hat_d_1, SC->vz_hat_d_1,  SC->ux_hat_d_2, SC->uy_hat_d_2, SC->uz_hat_d_2,  SC->ux_hat_d_3, SC->uy_hat_d_3, SC->uz_hat_d_3,  SC->fx_hat_d, SC->fy_hat_d, SC->fz_hat_d, SC->Qx_hat_d, SC->Qy_hat_d, SC->Qz_hat_d, SC->div_hat_d, SC->kx_nabla_d,  SC->ky_nabla_d, SC->kz_nabla_d, SC->din_diffusion_d, SC->din_poisson_d, SC->AM_11_d, SC->AM_22_d, SC->AM_33_d,  SC->AM_12_d, SC->AM_13_d, SC->AM_23_d);
+
+	
+	}
+
+	//apply shifting and store vectors back
+	A_vector_from_velocities_reduced_shifted_kernel<<< blocks, threads>>>(N_Arnoldi, vec_f_in, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d, vec_f_out, SC->shift_real);
+
+
+}
+
+
+
+// inverce matrix exponent
+
+void Axb_exponent_invert(struct_NS3D_RK3_iExp_Call *SC_exponential, real * vec_f_in, real * vec_f_out){
+
+	int L=SC_exponential->BiCG_L;
+	int N=(SC_exponential->Nx)*(SC_exponential->Ny)*(SC_exponential->Mz);
+	real *tol=new real[1];
+	tol[0]=SC_exponential->BiCG_tol;
+	int *Iter=new int[1];
+	Iter[0]=SC_exponential->BiCG_Iter;
+	cublasHandle_t handle=SC_exponential->handle;
+
+	int res_flag=BiCGStabL(handle, L, N, (user_map_vector) NSCallMatrixVector_exponential_reduced, (struct_NS3D_RK3_iExp_Call*) SC_exponential, vec_f_out, vec_f_in, tol, Iter, false, 10); //true->false; 10->ommit!
+	switch (res_flag){
+		case 0: //timer_print();
+				//printf("converged with: %le, and %i iterations\n", tol[0], Iter[0]);
+				//printf("%.03le ",tol[0]); 
+				printf("%i|",Iter[0]); 
+				fflush(stdout);
+				break;
+		case 1: //timer_print();
+				printf("not converged with: %le, and %i iterations\n", tol[0], Iter[0]);
+				exit(-1);
+				break;
+		case -1: printf("rho is 0 with: %le, and %i iterations\n", tol[0], Iter[0]);
+				exit(-1);
+				break;
+		case -2: printf("omega is with: %le, and %i iterations\n", tol[0], Iter[0]);
+				exit(-1);
+				break;
+		case -3: printf("NANs with: %le, and %i iterations\n", tol[0], Iter[0]);
+				exit(-1);
+				break;
+	}
+	delete [] tol, Iter;
+}
+
+
+
 
 
 
@@ -1243,14 +1392,13 @@ int main (int argc, char *argv[])
 
 
 
-
 	int N_Arnoldi=3*Nx*Ny*Mz;
 	double *vec_f=new double[N_Arnoldi];
 	double *vec_v=new double[N_Arnoldi];
-	double *vec_f_d, *vec_v_d, *vec_Bf_d, *vec_Bv_d, *vec_Br_d;
+	double *vec_f_d, *vec_v_d;
 
-	device_allocate_all_real(N_Arnoldi, 1, 1, 2, &vec_f_d, &vec_v_d);
-	device_allocate_all_real(N_Arnoldi-3, 1, 1, 3, &vec_Bf_d, &vec_Bv_d, &vec_Br_d);
+	device_allocate_all_real(N_Arnoldi-3, 1, 1, 2, &vec_f_d, &vec_v_d);
+
 
 	for (int i = 0; i < N_Arnoldi; ++i)
 	{
@@ -1261,12 +1409,8 @@ int main (int argc, char *argv[])
 	vec_v[0]=1;
 	normalize(N_Arnoldi, vec_f);
 	
-	device_host_real_cpy(vec_f_d, vec_f, N_Arnoldi, 1, 1);
-	device_host_real_cpy(vec_v_d, vec_v, N_Arnoldi, 1, 1);
-	
-	device_host_real_cpy(vec_Bf_d, vec_f, N_Arnoldi-3, 1, 1);
-	device_host_real_cpy(vec_Bv_d, vec_v, N_Arnoldi-3, 1, 1);
-	device_host_real_cpy(vec_Br_d, vec_v, N_Arnoldi-3, 1, 1);
+	device_host_real_cpy(vec_f_d, vec_f, N_Arnoldi-3, 1, 1);
+	device_host_real_cpy(vec_v_d, vec_v, N_Arnoldi-3, 1, 1);
 
 	real res_tol=1;
 	//int k_A=6, m_A=3; //initialized at the start of main from parameters or from default k_A=6, m_A=3.
@@ -1276,58 +1420,80 @@ int main (int argc, char *argv[])
 
 	device_allocate_all_real(N_Arnoldi, k_A, 1, 2, &eigvs_real, &eigvs_imag);
 
-	//check BiCGSTAB(L) convergence - solve J*vec_v_d=vec_f_d;
-	
 
-	real *tol=new real[1];
-	int *iter=new int[1];
-	int maxIterations=N_Arnoldi;
-	real tolerance=1.0e-8;
-	tol[0]=tolerance;
-	iter[0]=maxIterations;	
-	int LL=10;
+	cublasHandle_t handle;		//init cublas
+	cublasStatus_t ret;
+	ret = cublasCreate(&handle);
+	Arnoldi::checkError(ret, " cublasCreate(). ");
 
-	timer_start();
-	int res_flag=BiCGStabL(LL, N_Arnoldi-3, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, vec_Bv_d, vec_Bf_d, tol, iter, true, 250); //!!! -3 !!!
-	timer_stop();
-	if (cudaDeviceSynchronize() != cudaSuccess){
-		fprintf(stderr, "Cuda error: Failed to synchronize\n");
-	}	
+	//check invert Exponent structure init
+	struct_NS3D_RK3_iExp_Call *NS3D_Call_iExp = new struct_NS3D_RK3_iExp_Call[1];
 
-	NSCallMatrixVector_reduced((struct_NS3D_RK3_Call *) NS3D_Call, vec_Bv_d, vec_Br_d);
-    cublasHandle_t handle; 
-    cublasStatus_t ret;
-    ret = cublasCreate(&handle);
-    Arnoldi::checkError(ret, " cublasCreate(). ");
-	Arnoldi::vectors_add_GPU(handle, N_Arnoldi-3, -1.0, vec_Bf_d, vec_Br_d);
-	printf("Actual residual=%le\n", Arnoldi::vector_norm2_GPU(handle, N_Arnoldi-3, vec_Br_d) );
-	cublasDestroy(handle);
+	NS3D_Call_iExp->dimGrid=dimGrid;
+	NS3D_Call_iExp->dimBlock=dimBlock;
+	NS3D_Call_iExp->dimGrid_C=dimGrid_C;
+	NS3D_Call_iExp->dimBlock_C=dimBlock_C;
+	NS3D_Call_iExp->dx=dx;
+	NS3D_Call_iExp->dy=dy; 
+	NS3D_Call_iExp->dz=dz;
+	NS3D_Call_iExp->dt=dt;
+	NS3D_Call_iExp->Re=Re;
+	NS3D_Call_iExp->Nx=Nx;
+	NS3D_Call_iExp->Ny=Ny;
+	NS3D_Call_iExp->Nz=Nz;
+	NS3D_Call_iExp->Mz=Mz;
+	NS3D_Call_iExp->ux_hat_d=ux_hat_d;
+	NS3D_Call_iExp->uy_hat_d=uy_hat_d;
+	NS3D_Call_iExp->uz_hat_d=uz_hat_d;
+	NS3D_Call_iExp->vx_hat_d=vx_hat_d;
+	NS3D_Call_iExp->vy_hat_d=vy_hat_d;
+	NS3D_Call_iExp->vz_hat_d=vz_hat_d;
+	NS3D_Call_iExp->ux_hat_d_1=ux_hat_d_1;
+	NS3D_Call_iExp->uy_hat_d_1=uy_hat_d_1;
+	NS3D_Call_iExp->uz_hat_d_1=uz_hat_d_1;
+	NS3D_Call_iExp->vx_hat_d_1=vx_hat_d_1;
+	NS3D_Call_iExp->vy_hat_d_1=vy_hat_d_1;
+	NS3D_Call_iExp->vz_hat_d_1=vz_hat_d_1;
+	NS3D_Call_iExp->ux_hat_d_2=ux_hat_d_2;
+	NS3D_Call_iExp->uy_hat_d_2=uy_hat_d_2;
+	NS3D_Call_iExp->uz_hat_d_2=uz_hat_d_2;
+	NS3D_Call_iExp->ux_hat_d_3=ux_hat_d_3;
+	NS3D_Call_iExp->uy_hat_d_3=uy_hat_d_3;
+	NS3D_Call_iExp->uz_hat_d_3=uz_hat_d_3;
+	NS3D_Call_iExp->fx_hat_d=fx_hat_d;
+	NS3D_Call_iExp->fy_hat_d=fy_hat_d;
+	NS3D_Call_iExp->fz_hat_d=fz_hat_d;
+	NS3D_Call_iExp->Qx_hat_d=Qx_hat_d;
+	NS3D_Call_iExp->Qy_hat_d=Qy_hat_d;
+	NS3D_Call_iExp->Qz_hat_d=Qz_hat_d;
+	NS3D_Call_iExp->div_hat_d=div_hat_d;
+	NS3D_Call_iExp->kx_nabla_d=kx_nabla_d;
+	NS3D_Call_iExp->ky_nabla_d=ky_nabla_d;
+	NS3D_Call_iExp->kz_nabla_d=kz_nabla_d;
+	NS3D_Call_iExp->din_diffusion_d=din_diffusion_d;
+	NS3D_Call_iExp->din_poisson_d=din_poisson_d;
+	NS3D_Call_iExp->AM_11_d=AM_11_d;
+	NS3D_Call_iExp->AM_22_d=AM_22_d;
+	NS3D_Call_iExp->AM_33_d=AM_33_d;
+	NS3D_Call_iExp->AM_12_d=AM_12_d;
+	NS3D_Call_iExp->AM_13_d=AM_13_d;
+	NS3D_Call_iExp->AM_23_d=AM_23_d;
+	NS3D_Call_iExp->Timesteps_period=50;//3478;
 
-	check_nans_kernel("Just check", N_Arnoldi-3, vec_Bf_d);
-	Arnoldi::check_for_nans("Just check", N_Arnoldi-3, vec_Bf_d);
-	check_nans_kernel("Just check", Nx*Ny*Mz, ux_hat_d);
+	//init BICGStab(L) properties
+	NS3D_Call_iExp->shift_real=1.05;
+	NS3D_Call_iExp->BiCG_L=4;
+	NS3D_Call_iExp->BiCG_tol=1.0e-9;
+	NS3D_Call_iExp->BiCG_Iter=N_Arnoldi-3;
+	NS3D_Call_iExp->handle=handle;
 
-	printf("\nBiCGStab(%i) flag = %i: ", LL, res_flag);
-	switch (res_flag){
-		case 0: timer_print();
-				printf("converged with: %le, and %i iterations\n", tol[0], iter[0]);
-				break;
-		case 1: timer_print();
-				printf("not converged with: %le, and %i iterations\n", tol[0], iter[0]);
-				break;
-		case -1: printf("rho is 0 with: %le, and %i iterations\n", tol[0], iter[0]);
-				break;
-		case -2: printf("omega is with: %le, and %i iterations\n", tol[0], iter[0]);
-				break;
-	}
-	
-	device_deallocate_all_real(3, vec_Bf_d, vec_Bv_d, vec_Br_d );
-	delete [] iter, tol;
-	
+
+
 	//call Arnoldi method with linearised function
 	char what[]="LR";
-	int IRA_iterations=300;
-	double IRA_tol=1.0e-12;
+	int IRA_iterations=3000;
+	double IRA_tol=1.0e-9;
+
 
 
 
@@ -1336,13 +1502,13 @@ int main (int argc, char *argv[])
 		printf("\nSkipping IRA! \n");
 	}
 	else if(Timesteps_period==1){
-		//nemiver =)
-		res_tol=Implicit_restart_Arnoldi_GPU_data(true, N_Arnoldi, (user_map_vector) NSCallMatrixVector, (struct_NS3D_RK3_Call *) NS3D_Call,  vec_f_d, what, k_A, m, eigenvaluesA, IRA_tol, IRA_iterations,eigvs_real,eigvs_imag); //_exponential
+		//res_tol=Implicit_restart_Arnoldi_GPU_data(true, N_Arnoldi, (user_map_vector) NSCallMatrixVector, (struct_NS3D_RK3_Call *) NS3D_Call,  vec_f_d, what, k_A, m, eigenvaluesA, IRA_tol, IRA_iterations,eigvs_real,eigvs_imag); //_exponential
+		res_tol=Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(handle, true, N_Arnoldi-3, (user_map_vector) Axb_exponent_invert, (struct_NS3D_RK3_iExp_Call *) NS3D_Call_iExp, (user_map_vector) NSCallMatrixVector, (struct_NS3D_RK3_Call *) NS3D_Call, vec_f_d, "LR", "LM", k_A, m, eigenvaluesA, IRA_tol, IRA_iterations, eigvs_real,eigvs_imag);
 	}
 	else{
 		what[0]='L';
 		what[1]='M';
-		res_tol=Implicit_restart_Arnoldi_GPU_data(true, N_Arnoldi, (user_map_vector) NSCallMatrixVector_exponential, (struct_NS3D_RK3_Call *) NS3D_Call,  vec_f_d, what, k_A, m, eigenvaluesA, IRA_tol, IRA_iterations,eigvs_real,eigvs_imag); //_exponential		
+		res_tol=Implicit_restart_Arnoldi_GPU_data(handle, true, N_Arnoldi-3, (user_map_vector) NSCallMatrixVector_exponential, (struct_NS3D_RK3_Call *) NS3D_Call,  vec_f_d, what, k_A, m, eigenvaluesA, IRA_tol, IRA_iterations,eigvs_real,eigvs_imag); //_exponential		
 
 	}
 
@@ -1351,6 +1517,9 @@ int main (int argc, char *argv[])
 
 
 	printf("\nArnoldi ends\n");
+	cublasDestroy(handle);
+
+	delete [] NS3D_Call_iExp;
 
 	//printing out eigenvectors in physical domain
 	
