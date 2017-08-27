@@ -1,0 +1,32 @@
+	call_vector_map_GPU(handle, N, A_d, vec_f_d, vec_w_d);			//OK
+
+	matrixMultVector_GPU(handle, N, A_d, N, 1.0, vec_f_d, 1.0, vec_w_d); //A: rows, cols  //OK
+
+	matrixMultVector_GPU(handle, N, V_d, m, 1.0, vec_c_d, 0.0, vec_w_d); 	//OK
+
+	real vec_norm2=vector_norm2_GPU(handle, N, vec_f_d);					//OK
+	printf("\n norm2(vec_f)=%le\n",vec_norm2);
+
+	vector_copy_GPU(handle,N, vec_f_d, vec_w_d);			//OK
+
+	real vec_dot=vector_dot_product_GPU(handle, N, vec_f_d, vec_w_d);		//OK
+	printf("\n norm2(vec_f)=%le\n",vec_dot);
+
+	set_matrix_colomn_GPU(N, m, V_d, vec_f_d, 0);							//OK
+
+	matrixMultVector_part_GPU(handle, N, V_d, m, 1.0, vec_c_d, 3, 0.0, vec_w_d);  //OK, from 0 to 2 including!
+
+	matrixDotVector_GPU(handle, N, V_d, m, 1.0, vec_f_d, 0.0, vec_h_d);		//OK
+
+	matrixDotVector_part_GPU(handle, N, V_d, m, 1.0, vec_f_d, 4, 0.0, vec_h_d);	//OK  from 0 to 3 including!
+
+	normalize_vector_GPU(handle, N, vec_f_d);			//OK
+
+
+	vec_norm2=vector_norm2_GPU(handle, N, vec_f_d);					//OK
+	printf("\n norm2(vec_f)=%le\n",vec_norm2);
+
+	vectors_add_GPU(handle, N, 2.0, vec_f_d, vec_w_d);				//OK
+
+	matrixMultMatrix_GPU(handle, N, m, m, V_d, 1.0, H_d, 0.0, V1_d);	//OK
+
