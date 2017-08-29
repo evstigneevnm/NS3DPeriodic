@@ -288,9 +288,23 @@ void single_time_step_UV_RHS(dim3 dimGrid, dim3 dimBlock, dim3 dimGrid_C, dim3 d
 
 		solve_advection_diffusion_projection_UV_RHS(dimGrid_C, dimBlock_C, Nx, Ny, Mz, din_diffusion_d, vx_hat_d, vy_hat_d, vz_hat_d, Re, dt, Qx_hat_d, Qy_hat_d, Qz_hat_d, AM_11_d, AM_22_d, AM_33_d, AM_12_d, AM_13_d, AM_23_d);
 
-	
 
 }
+
+
+
+void single_time_step_iUV_RHS(dim3 dimGrid, dim3 dimBlock, dim3 dimGrid_C, dim3 dimBlock_C, real dx, real dy, real dz, real dt, real Re, int Nx, int Ny, int Nz, int Mz, cudaComplex *ux_hat_d, cudaComplex *uy_hat_d, cudaComplex *uz_hat_d, cudaComplex *vx_hat_d, cudaComplex *vy_hat_d, cudaComplex *vz_hat_d,  cudaComplex *Qx_hat_d, cudaComplex *Qy_hat_d, cudaComplex *Qz_hat_d, cudaComplex *div_hat_d, real* kx_nabla_d, real* ky_nabla_d, real *kz_nabla_d, real *din_diffusion_d, real *din_poisson_d, real *AM_11_d, real *AM_22_d, real *AM_33_d,  real *AM_12_d, real *AM_13_d, real *AM_23_d){
+	
+
+		
+		calculate_convolution_2p3_UV(dimGrid, dimBlock, dimGrid_C, dimBlock_C, Nx, Ny, Nz, Mz, ux_hat_d, uy_hat_d, uz_hat_d, vx_hat_d, vy_hat_d, vz_hat_d, kx_nabla_d, ky_nabla_d, kz_nabla_d, Qx_hat_d, Qy_hat_d, Qz_hat_d);
+		//WenoAdvection(dimBlock, dimGrid, dimBlock_C, dimGrid_C, Nx, Ny, Nz, Mz, 5, ux_hat_d, uy_hat_d, uz_hat_d, dx, dy, dz, Qx_hat_d, Qy_hat_d, Qz_hat_d);
+
+		solve_advection_implicit_diffusion_projection_UV(dimGrid_C, dimBlock_C, Nx, Ny, Mz, din_diffusion_d, vx_hat_d, vy_hat_d, vz_hat_d, Re, dt, Qx_hat_d, Qy_hat_d, Qz_hat_d, AM_11_d, AM_22_d, AM_33_d, AM_12_d, AM_13_d, AM_23_d);
+
+
+}
+
 
 
 void RK3_SSP(dim3 dimGrid, dim3 dimBlock, dim3 dimGrid_C, dim3 dimBlock_C, real dx, real dy, real dz, real dt, real Re, int Nx, int Ny, int Nz, int Mz, cudaComplex *ux_hat_d, cudaComplex *uy_hat_d, cudaComplex *uz_hat_d,  cudaComplex *ux_hat_d_1, cudaComplex *uy_hat_d_1, cudaComplex *uz_hat_d_1,  cudaComplex *ux_hat_d_2, cudaComplex *uy_hat_d_2, cudaComplex *uz_hat_d_2,  cudaComplex *ux_hat_d_3, cudaComplex *uy_hat_d_3, cudaComplex *uz_hat_d_3,  cudaComplex *fx_hat_d, cudaComplex *fy_hat_d, cudaComplex *fz_hat_d, cudaComplex *Qx_hat_d, cudaComplex *Qy_hat_d, cudaComplex *Qz_hat_d, cudaComplex *div_hat_d, real* kx_nabla_d, real* ky_nabla_d, real *kz_nabla_d, real *din_diffusion_d, real *din_poisson_d, real *AM_11_d, real *AM_22_d, real *AM_33_d,  real *AM_12_d, real *AM_13_d, real *AM_23_d){

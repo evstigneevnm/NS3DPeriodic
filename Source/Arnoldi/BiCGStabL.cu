@@ -155,6 +155,7 @@ int BiCGStabL(cublasHandle_t handle, int L, int N, user_map_vector Axb, void *us
         }
     	if((verbose)&&(iter%skip==0)){
       		printf("%i %le\n", iter, error);
+          fflush(stdout);
     	}
     	if(flag<0)	//exit if nans or rho==0;
     		break;

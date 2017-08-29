@@ -369,8 +369,14 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bo
 		Arnoldi::vector_copy_GPU(handle, N*m, V1_d, V_d);
 
 		ritz_norm=vector_normC(k0,ritz_vector);
-		if(verbose)
-			printf("it=%i, ritz norm_C=%.05le \n", iterations, (double)ritz_norm);
+		if(verbose){
+			printf("it=%i, ritz norms=", iterations);
+			for(int ll=0;ll<k0;ll++){
+				printf("%0.3le ",(double)ritz_vector[ll]);
+			}
+			printf("\n");
+		}
+
 		else{
 		//	if(iterations%50==0)
 		//		printf("it=%i, ritz norm_C=%.05e \n", iterations, ritz_norm);
@@ -392,6 +398,7 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bo
 			H_Schur[I2(i,j,k)]=H[I2(i,j,m)];
 		}
 	}
+	print_matrix("H_pre.dat", k, k, H_Schur);
 	//check pre-Galerkin eigenvalues of H matrix
 	real complex *HC1=new real complex[k*k];
 	for(int i=0;i<k;i++){
@@ -412,6 +419,9 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bo
 
 	Schur_Hessinberg_matrix(H_Schur, k, Q_Schur); //returns Q as orthogonal matrix whose columns are the Schur vectors and the input matrix is overwritten as an upper quasi-triangular matrix (the Schur form of input matrix)
 
+
+	print_matrix("H_Schur.dat", k, k, H_Schur);
+	print_matrix("Q_Schur.dat", k, k, Q_Schur);
 	//compute eigenvectors
    	//[Q,R] = schur(H(1:ko,1:ko));
    	//V = V(:,1:ko)*Q; <--- eigenvectors
