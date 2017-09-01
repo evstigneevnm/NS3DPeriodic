@@ -315,12 +315,12 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bo
 	Arnoldi::set_initial_Krylov_vector_value_GPU(N, vec_w_d);
 
 	// Allocate memroy for eigenvectors!
-	cublasComplex *eigenvectorsH_d, *eigenvectorsA_d, *eigenvectorsA_unsorted_d;
+	cublasComplex *eigenvectorsH_d, *eigenvectorsA_d, *eigenvectorsA_unsorted_d, *eigenvectorsA_sorted_d;
 
 	eigenvectorsH_d=Arnoldi::device_allocate_complex(k, k, 1);
 	eigenvectorsA_d=Arnoldi::device_allocate_complex(N, k, 1);
 	eigenvectorsA_unsorted_d=Arnoldi::device_allocate_complex(N, k, 1);
-
+	eigenvectorsA_sorted_d=Arnoldi::device_allocate_complex(N, k, 1);
 
 //	cublasHandle_t handle;		//init cublas
 //	cublasStatus_t ret;
@@ -495,12 +495,17 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bo
 	real_complex_to_cublas_complex(k*k, eigenvectorsH_kk_sorted,  eigenvectorsH_d);
 
 	real_device_to_cublas_complex(N*k, V_d, eigenvectorsA_unsorted_d);
-	Arnoldi::matrixMultComplexMatrix_GPU(handle, N, k, k, eigenvectorsA_unsorted_d, eigenvectorsH_d, eigenvectorsA_d); //here eigenvectorsA_d contain sorted eigenvectors of original problem
+	
+	Arnoldi::to_device_from_host_int_cpy(sorted_list_d, sorted_list, k, 1, 1);
+	permute_matrix_colums(N, k, sorted_list_d, eigenvectorsA_unsorted_d,  eigenvectorsA_sorted_d);
+
+	Arnoldi::matrixMultComplexMatrix_GPU(handle, N, k, k, eigenvectorsA_sorted_d, eigenvectorsH_d, eigenvectorsA_d); //here eigenvectorsA_d contain sorted eigenvectors of original problem
 
 	cudaFree(sorted_list_d);
 	delete [] sorted_list;
 	cudaFree(eigenvectorsH_d);
 	cudaFree(eigenvectorsA_unsorted_d);
+	cudaFree(eigenvectorsA_sorted_d);
 
 	if(verbose)
 		printf("\ndone\n");
