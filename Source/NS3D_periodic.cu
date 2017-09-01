@@ -1535,13 +1535,13 @@ int main (int argc, char *argv[])
 	NS3D_Call_iExp->AM_12_d=AM_12_d;
 	NS3D_Call_iExp->AM_13_d=AM_13_d;
 	NS3D_Call_iExp->AM_23_d=AM_23_d;
-	NS3D_Call_iExp->Timesteps_period=20;//3478;
+	NS3D_Call_iExp->Timesteps_period=10;//3478;
 
 	//init BICGStab(L) properties
-	NS3D_Call_iExp->shift_real=1.0005;
-	NS3D_Call_iExp->BiCG_L=7;
+	NS3D_Call_iExp->shift_real=1.01;
+	NS3D_Call_iExp->BiCG_L=5;
 	NS3D_Call_iExp->BiCG_tol=1.0e-9;
-	NS3D_Call_iExp->BiCG_Iter=N_Arnoldi-3;
+	NS3D_Call_iExp->BiCG_Iter=N_Arnoldi;
 	NS3D_Call_iExp->handle=handle;
 
 
