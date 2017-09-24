@@ -7,7 +7,7 @@
 #define block_size_y BLOCKSIZE/block_size_x
 
 
-const double Im_eig_tol=1.0E-14;
+const double Im_eig_tol=1.0E-15;
 
 #ifndef I2
 	#define I2(i,j,Rows) (i)+(j)*(Rows)

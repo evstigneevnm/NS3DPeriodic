@@ -421,9 +421,12 @@ __global__ void set_initial_Krylov_vector_value_kernel(int N, real *vec){
 	if(i<N){
 		vec[i]=0.0;
 	}
-	vec[0]=1.0;
-	vec[N/4]=3.0;
+	vec[0]=0.0;
+	vec[1]=1.0;
+	vec[N/4]=1.5;
 	vec[N/2]=0.5;
+	vec[N-1]=1.0;
+	vec[N-4]=1.0;
 
 }
 

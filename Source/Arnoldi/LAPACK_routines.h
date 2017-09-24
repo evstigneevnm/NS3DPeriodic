@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <math.h>
 #include <complex.h>
+//#include <ccomplex>
+//#define lapack_complex_float std::complex<float>
+//#define lapack_complex_double std::complex<double>
 #include <stdlib.h>
 //
 #include "file_operations.h"

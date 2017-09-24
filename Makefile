@@ -56,6 +56,10 @@ BiCGstabL:
 	2>result_make.txt
 	nvcc -arch=sm_21 -m64 -g Source/Arnoldi/BiCGStabL.cu -o Obj/Arnoldi/BiCGStabL.o -c 2>>result_make.txt
 
+Newton:
+	2>result_make.txt
+	nvcc -arch=sm_21 -m64 -g Source/Arnoldi/Newton.cu -o Obj/Arnoldi/Newton.o -c 2>>result_make.txt
+
 
 Arnoldi_all:
 	make Arnoldi_LAPACKs Arnoldi_Products Arnoldi_Shifts Arnoldi_QRshifts Arnoldi_timer Arnoldi_Matrix_Vector_emulator Arnoldi_Arnoldi_Driver Arnoldi_file_operations Arnoldi_memory_operations Arnoldi_cuda_supp Arnoldi_Implicit_restart_Arnoldi BiCGstabL
@@ -115,4 +119,4 @@ clear:
 
 deb_all:
 	2>result_make.txt
-	nvcc -g -m64 -arch=sm_21 Source/NS3D_periodic.cu -o NS3D_periodic Obj/cuda_supp.o Obj/file_operations.o  Obj/math_support.o Obj/memory_operations.o Obj/divergence.o Obj/diffusion.o Obj/RK_time_step.o Obj/min_max_reduction.o Obj/advection_2_3.o Obj/advection_WENO.o Obj/Shapiro_test.o Obj/Jacobian.o  Obj/Arnoldi/Arnoldi_LAPACK_routines.o Obj/Arnoldi/Arnoldi_Products.o Obj/Arnoldi/Arnoldi_Select_Shifts.o Obj/Arnoldi/Arnoldi_QR_Shifts.o Obj/Arnoldi/Arnoldi_timer.o Obj/Arnoldi/Arnoldi_Matrix_Vector_emulator.o Obj/Arnoldi/Arnoldi_Arnoldi_Driver.o Obj/Arnoldi/Arnoldi_file_operations.o Source/Arnoldi/memory_operations.cu Obj/Arnoldi/Arnoldi_cuda_supp.o Obj/Arnoldi/Arnoldi_Implicit_restart_Arnoldi.o  Obj/Arnoldi/BiCGStabL.o  -L/opt/OpenBLAS/lib -lblas -lm -lgfortran -lopenblas -llapack -lcublas -lcufft 2>>result_make.txt
+	nvcc -g -m64 -arch=sm_21 Source/NS3D_periodic.cu -o NS3D_periodic Obj/cuda_supp.o Obj/file_operations.o  Obj/math_support.o Obj/memory_operations.o Obj/divergence.o Obj/diffusion.o Obj/RK_time_step.o Obj/min_max_reduction.o Obj/advection_2_3.o Obj/advection_WENO.o Obj/Shapiro_test.o Obj/Jacobian.o  Obj/Arnoldi/Arnoldi_LAPACK_routines.o Obj/Arnoldi/Arnoldi_Products.o Obj/Arnoldi/Arnoldi_Select_Shifts.o Obj/Arnoldi/Arnoldi_QR_Shifts.o Obj/Arnoldi/Arnoldi_timer.o Obj/Arnoldi/Arnoldi_Matrix_Vector_emulator.o Obj/Arnoldi/Arnoldi_Arnoldi_Driver.o Obj/Arnoldi/Arnoldi_file_operations.o Source/Arnoldi/memory_operations.cu Obj/Arnoldi/Arnoldi_cuda_supp.o Obj/Arnoldi/Arnoldi_Implicit_restart_Arnoldi.o  Obj/Arnoldi/BiCGStabL.o Obj/Arnoldi/Newton.o -L/opt/OpenBLAS/lib -lblas -lm -lgfortran -lopenblas -llapack -lcublas -lcufft 2>>result_make.txt

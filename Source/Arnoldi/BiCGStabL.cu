@@ -1,5 +1,5 @@
-//#include "BiCGStabL.h"
-#include "Matrix_Vector_emulator.h"
+#include "BiCGStabL.h"
+//#include "Matrix_Vector_emulator.h"
 
 void get_residualL(cublasHandle_t handle, int N, user_map_vector Axb, void *user_struct, real *source, real *RHS, real* r){
 	
@@ -154,8 +154,8 @@ int BiCGStabL(cublasHandle_t handle, int L, int N, user_map_vector Axb, void *us
             break;
         }
     	if((verbose)&&(iter%skip==0)){
-      		printf("%i %le\n", iter, error);
-          fflush(stdout);
+      	     printf("%i %le\n", iter, error);
+            fflush(stdout);
     	}
     	if(flag<0)	//exit if nans or rho==0;
     		break;

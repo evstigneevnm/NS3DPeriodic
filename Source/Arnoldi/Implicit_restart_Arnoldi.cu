@@ -497,9 +497,10 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bo
 	real_device_to_cublas_complex(N*k, V_d, eigenvectorsA_unsorted_d);
 	
 	Arnoldi::to_device_from_host_int_cpy(sorted_list_d, sorted_list, k, 1, 1);
-	permute_matrix_colums(N, k, sorted_list_d, eigenvectorsA_unsorted_d,  eigenvectorsA_sorted_d);
 
-	Arnoldi::matrixMultComplexMatrix_GPU(handle, N, k, k, eigenvectorsA_sorted_d, eigenvectorsH_d, eigenvectorsA_d); //here eigenvectorsA_d contain sorted eigenvectors of original problem
+	Arnoldi::matrixMultComplexMatrix_GPU(handle, N, k, k, eigenvectorsA_unsorted_d, eigenvectorsH_d, eigenvectorsA_sorted_d); //here eigenvectorsA_d contain sorted eigenvectors of original problem
+
+	permute_matrix_colums(N, k, sorted_list_d, eigenvectorsA_sorted_d, eigenvectorsA_d);
 
 	cudaFree(sorted_list_d);
 	delete [] sorted_list;

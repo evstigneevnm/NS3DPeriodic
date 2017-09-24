@@ -6,7 +6,6 @@
 #include "cuda_supp.h"
 #include "Products.h"
 #include "memory_operations.h"
-//#include "BiCGStabL.h"
 
 //declare user function prototype to call Vector mapping via structure object pointer "matrix" with domain in "src" and image in "dst"
 typedef void (*user_map_vector) (void* matctx, void* src, void* dst);

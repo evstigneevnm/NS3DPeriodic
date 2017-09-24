@@ -10,6 +10,7 @@
 #include "QR_Shifts.h"
 #include "Matrix_Vector_emulator.h"
 #include "file_operations.h"
+//to set number of threads in openblas
 #include <cblas.h>
 
 extern "C" int openblas_get_num_threads(void);

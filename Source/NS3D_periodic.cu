@@ -2,6 +2,11 @@
 #include <stdio.h>
 #include <math.h>
 #include <sys/time.h> //for timer
+//inclusion of property tree file configuration
+//#include <boost/property_tree/ptree.hpp>
+//#include <boost/property_tree/info_parser.hpp>
+//using namespace boost::property_tree;
+
 //support
 #include "Macros.h"
 #include "cuda_supp.h"
@@ -24,10 +29,18 @@
 //BiCGStab(L)
 #include "Arnoldi/BiCGStabL.h"
 
+//Newton method
+#include "Arnoldi/Newton.h"
+
 //during debug!
 #include "Arnoldi/cuda_supp.h"
 
-#define DEBUG 1
+//structures that define user call
+#include "Structures.h"
+
+
+
+#define DEBUG 0
 
 //=================================================================
 //=====Some validation initial conditions and exact solutions======
@@ -74,126 +87,6 @@
 
 
 //RK3_SSP(dimGrid, dimBlock, dimGrid_C, dimBlock_C, dx, dy, dz, dt, Re, Nx, Ny, Nz, Mz, ux_hat_d, uy_hat_d, uz_hat_d,  ux_hat_d_1, uy_hat_d_1, uz_hat_d_1,  ux_hat_d_2, uy_hat_d_2, uz_hat_d_2,  ux_hat_d_3, uy_hat_d_3, uz_hat_d_3,  fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d,  ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d,  AM_12_d, AM_13_d, AM_23_d);
-
-typedef struct NS_RK3_Call_parameters_Struture{ 
-		dim3 dimGrid;
-		dim3 dimBlock;
-		dim3 dimGrid_C;
-		dim3 dimBlock_C;
-		real dx;
-		real dy; 
-		real dz;
-		real dt;
-		real Re;
-		int Nx;
-		int Ny;
-		int Nz;
-		int Mz;
-		cudaComplex *ux_hat_d;
-		cudaComplex *uy_hat_d;
-		cudaComplex *uz_hat_d;
-		cudaComplex *vx_hat_d;
-		cudaComplex *vy_hat_d;
-		cudaComplex *vz_hat_d;
-		cudaComplex *ux_hat_d_1;
-		cudaComplex *uy_hat_d_1;
-		cudaComplex *uz_hat_d_1;
-		cudaComplex *vx_hat_d_1;
-		cudaComplex *vy_hat_d_1;
-		cudaComplex *vz_hat_d_1;
-		cudaComplex *ux_hat_d_2;
-		cudaComplex *uy_hat_d_2;
-		cudaComplex *uz_hat_d_2;
-		cudaComplex *ux_hat_d_3;
-		cudaComplex *uy_hat_d_3;
-		cudaComplex *uz_hat_d_3;
-		cudaComplex *fx_hat_d;
-		cudaComplex *fy_hat_d;
-		cudaComplex *fz_hat_d;
-		cudaComplex *Qx_hat_d;
-		cudaComplex *Qy_hat_d;
-		cudaComplex *Qz_hat_d;
-		cudaComplex *div_hat_d;
-		real* kx_nabla_d;
-		real* ky_nabla_d;
-		real *kz_nabla_d;
-		real *din_diffusion_d;
-		real *din_poisson_d;
-		real *AM_11_d;
-		real *AM_22_d;
-		real *AM_33_d;
-		real *AM_12_d;
-		real *AM_13_d;
-		real *AM_23_d;
-		int Timesteps_period;
-} struct_NS3D_RK3_Call;
-
-
-
-
-
-typedef struct NS_RK3_inverce_Exponent_Call_parameters_Struture{ 
-		dim3 dimGrid;
-		dim3 dimBlock;
-		dim3 dimGrid_C;
-		dim3 dimBlock_C;
-		real dx;
-		real dy; 
-		real dz;
-		real dt;
-		real Re;
-		int Nx;
-		int Ny;
-		int Nz;
-		int Mz;
-		cudaComplex *ux_hat_d;
-		cudaComplex *uy_hat_d;
-		cudaComplex *uz_hat_d;
-		cudaComplex *vx_hat_d;
-		cudaComplex *vy_hat_d;
-		cudaComplex *vz_hat_d;
-		cudaComplex *ux_hat_d_1;
-		cudaComplex *uy_hat_d_1;
-		cudaComplex *uz_hat_d_1;
-		cudaComplex *vx_hat_d_1;
-		cudaComplex *vy_hat_d_1;
-		cudaComplex *vz_hat_d_1;
-		cudaComplex *ux_hat_d_2;
-		cudaComplex *uy_hat_d_2;
-		cudaComplex *uz_hat_d_2;
-		cudaComplex *ux_hat_d_3;
-		cudaComplex *uy_hat_d_3;
-		cudaComplex *uz_hat_d_3;
-		cudaComplex *fx_hat_d;
-		cudaComplex *fy_hat_d;
-		cudaComplex *fz_hat_d;
-		cudaComplex *Qx_hat_d;
-		cudaComplex *Qy_hat_d;
-		cudaComplex *Qz_hat_d;
-		cudaComplex *div_hat_d;
-		real* kx_nabla_d;
-		real* ky_nabla_d;
-		real *kz_nabla_d;
-		real *din_diffusion_d;
-		real *din_poisson_d;
-		real *AM_11_d;
-		real *AM_22_d;
-		real *AM_33_d;
-		real *AM_12_d;
-		real *AM_13_d;
-		real *AM_23_d;
-		int Timesteps_period;
-
-		// real exponent shifting
-		real shift_real;
-
-		//for BiCGStab(L):
-		int BiCG_L;
-		real BiCG_tol;
-		int BiCG_Iter;
-		cublasHandle_t handle;
-} struct_NS3D_RK3_iExp_Call;
-
 
 
 
@@ -375,6 +268,54 @@ __global__ void A_vector_from_velocities_reduced_shifted_kernel(int N, real *vec
 }
 
 
+__global__ void A_vector_from_velocities_reduced_shifted_rotated_kernel_Real(int N, real *vec_source, cudaComplex *vx_hat_d, cudaComplex *vy_hat_d, cudaComplex *vz_hat_d, real *vec_dest, real shift_rotate_real, real shift_rotate_imag){
+
+
+	int i = blockIdx.x * blockDim.x + threadIdx.x;	
+	//assume that size of vec_source is (N-1)*3=3*N-3. these omitted 3 elements are zero Fourier components.
+	int shift_to_imag=3*N-3;  //start of V_imag in V vector. V_real starts at 0.
+
+
+	if(i<(N-1)){
+		vec_dest[i]=vx_hat_d[i+1].y-shift_rotate_real*vec_source[i]+shift_rotate_imag*vec_source[i+shift_to_imag];
+		vec_dest[i+(N-1)]=vy_hat_d[i+1].y-shift_rotate_real*vec_source[i+(N-1)]+shift_rotate_imag*vec_source[i+(N-1)+shift_to_imag];
+		vec_dest[i+2*(N-1)]=vz_hat_d[i+1].y-shift_rotate_real*vec_source[i+2*(N-1)]+shift_rotate_imag*vec_source[i+2*(N-1)+shift_to_imag];
+	}
+
+}
+
+__global__ void A_vector_from_velocities_reduced_shifted_rotated_kernel_Imag(int N, real *vec_source, cudaComplex *vx_hat_d, cudaComplex *vy_hat_d, cudaComplex *vz_hat_d, real *vec_dest, real shift_rotate_real, real shift_rotate_imag){
+
+
+	int i = blockIdx.x * blockDim.x + threadIdx.x;	
+	//assume that size of vec_source is (N-1)*3=3*N-3. these omitted 3 elements are zero Fourier components.
+	int shift_to_imag=3*N-3;  //start of V_imag in V vector. V_real starts at 0.
+
+	if(i<(N-1)){
+		vec_dest[i+shift_to_imag]=vx_hat_d[i+1].y-shift_rotate_real*vec_source[i+shift_to_imag]-shift_rotate_imag*vec_source[i];
+		vec_dest[i+(N-1)+shift_to_imag]=vy_hat_d[i+1].y-shift_rotate_real*vec_source[i+(N-1)+shift_to_imag]-shift_rotate_imag*vec_source[i+(N-1)];
+		vec_dest[i+2*(N-1)+shift_to_imag]=vz_hat_d[i+1].y-shift_rotate_real*vec_source[i+2*(N-1)+shift_to_imag]-shift_rotate_imag*vec_source[i+2*(N-1)];
+
+	}
+
+}
+
+
+
+
+__global__ void  A_vector_add_diagonal_kernel(int N, real *vec_f_in, real one_over_tau, real *vec_f_out){
+
+	int i = blockIdx.x * blockDim.x + threadIdx.x;	
+	if(i<(N-1)){
+		vec_f_out[i]=vec_f_out[i]-vec_f_in[i]*one_over_tau;
+		vec_f_out[i+(N-1)]=vec_f_out[i+(N-1)]-vec_f_in[i+(N-1)]*one_over_tau;
+		vec_f_out[i+2*(N-1)]=vec_f_out[i+2*(N-1)]-vec_f_in[i+2*(N-1)]*one_over_tau;
+	}
+
+
+}
+
+
 
 void NSCallMatrixVector(struct_NS3D_RK3_Call *SC, double * vec_f_in, double * vec_f_out){
 
@@ -395,8 +336,56 @@ void NSCallMatrixVector(struct_NS3D_RK3_Call *SC, double * vec_f_in, double * ve
 	//check_nans_kernel("F_out", N_Arnoldi*3, vec_f_out);
 }
 
-
 void NSCallMatrixVector_reduced(struct_NS3D_RK3_Call *SC, double * vec_f_in, double * vec_f_out){
+
+
+	int N_Arnoldi=(SC->Nx)*(SC->Ny)*(SC->Mz);
+	dim3 threads(BLOCKSIZE);
+	int blocks_x=(N_Arnoldi+BLOCKSIZE)/BLOCKSIZE;
+	dim3 blocks(blocks_x);
+	real one_over_tau=1.0/(SC->tau);
+
+	velocities_from_A_vector_reduced_kernel<<< blocks, threads>>>(N_Arnoldi, vec_f_in, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d);
+	
+	
+	//returns application of Jacobi matrix on a vector in v*, linearized arround u*.
+	RK3_SSP_UV_RHS(SC->dimGrid, SC->dimBlock, SC->dimGrid_C, SC->dimBlock_C, SC->dx, SC->dy, SC->dz, SC->dt, SC->Re, SC->Nx, SC->Ny, SC->Nz, SC->Mz, SC->ux_hat_d, SC->uy_hat_d, SC->uz_hat_d,  SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d, SC->ux_hat_d_1, SC->uy_hat_d_1, SC->uz_hat_d_1,  SC->ux_hat_d_2, SC->uy_hat_d_2, SC->uz_hat_d_2,  SC->ux_hat_d_3, SC->uy_hat_d_3, SC->uz_hat_d_3,  SC->fx_hat_d, SC->fy_hat_d, SC->fz_hat_d, SC->Qx_hat_d, SC->Qy_hat_d, SC->Qz_hat_d, SC->div_hat_d, SC->kx_nabla_d,  SC->ky_nabla_d, SC->kz_nabla_d, SC->din_diffusion_d, SC->din_poisson_d, SC->AM_11_d, SC->AM_22_d, SC->AM_33_d,  SC->AM_12_d, SC->AM_13_d, SC->AM_23_d);
+	
+
+
+	A_vector_from_velocities_reduced_kernel<<< blocks, threads>>>(N_Arnoldi, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d, vec_f_out);
+	
+	A_vector_add_diagonal_kernel<<< blocks, threads>>>(N_Arnoldi, vec_f_in, one_over_tau, vec_f_out);
+
+}
+/*
+void NSCallMatrixVector_reduced(struct_NS3D_RK3_Call *SC, double* vec_u_in, double * vec_f_in, double * vec_f_out){
+
+
+	int N_Arnoldi=(SC->Nx)*(SC->Ny)*(SC->Mz);
+	dim3 threads(BLOCKSIZE);
+	int blocks_x=(N_Arnoldi+BLOCKSIZE)/BLOCKSIZE;
+	dim3 blocks(blocks_x);
+	real one_over_tau=1.0/(SC->tau);
+
+	velocities_from_A_vector_reduced_kernel<<< blocks, threads>>>(N_Arnoldi, vec_u_in, SC->ux_hat_d, SC->uy_hat_d, SC->uz_hat_d);
+	
+
+	velocities_from_A_vector_reduced_kernel<<< blocks, threads>>>(N_Arnoldi, vec_f_in, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d);
+
+	//returns application of Jacobi matrix on a vector in v*, linearized arround u*.
+	RK3_SSP_UV_RHS(SC->dimGrid, SC->dimBlock, SC->dimGrid_C, SC->dimBlock_C, SC->dx, SC->dy, SC->dz, SC->dt, SC->Re, SC->Nx, SC->Ny, SC->Nz, SC->Mz, SC->ux_hat_d, SC->uy_hat_d, SC->uz_hat_d,  SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d, SC->ux_hat_d_1, SC->uy_hat_d_1, SC->uz_hat_d_1,  SC->ux_hat_d_2, SC->uy_hat_d_2, SC->uz_hat_d_2,  SC->ux_hat_d_3, SC->uy_hat_d_3, SC->uz_hat_d_3,  SC->fx_hat_d, SC->fy_hat_d, SC->fz_hat_d, SC->Qx_hat_d, SC->Qy_hat_d, SC->Qz_hat_d, SC->div_hat_d, SC->kx_nabla_d,  SC->ky_nabla_d, SC->kz_nabla_d, SC->din_diffusion_d, SC->din_poisson_d, SC->AM_11_d, SC->AM_22_d, SC->AM_33_d,  SC->AM_12_d, SC->AM_13_d, SC->AM_23_d);
+	
+
+
+	A_vector_from_velocities_reduced_kernel<<< blocks, threads>>>(N_Arnoldi, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d, vec_f_out);
+
+	A_vector_add_diagonal_kernel<<< blocks, threads>>>(N_Arnoldi, vec_f_in, one_over_tau, vec_f_out);
+		
+}
+*/
+
+void NSCallRHS_reduced(struct_NS3D_RK3_Call *SC, double * vec_f_in, double * vec_f_out){
 
 
 	int N_Arnoldi=(SC->Nx)*(SC->Ny)*(SC->Mz);
@@ -406,15 +395,22 @@ void NSCallMatrixVector_reduced(struct_NS3D_RK3_Call *SC, double * vec_f_in, dou
 
 
 	velocities_from_A_vector_reduced_kernel<<< blocks, threads>>>(N_Arnoldi, vec_f_in, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d);
+
+	velocities_from_A_vector_reduced_kernel<<< blocks, threads>>>(N_Arnoldi, vec_f_in, SC->ux_hat_d, SC->uy_hat_d, SC->uz_hat_d);
+
 	
-	RK3_SSP_UV_RHS(SC->dimGrid, SC->dimBlock, SC->dimGrid_C, SC->dimBlock_C, SC->dx, SC->dy, SC->dz, SC->dt, SC->Re, SC->Nx, SC->Ny, SC->Nz, SC->Mz, SC->ux_hat_d, SC->uy_hat_d, SC->uz_hat_d,  SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d, SC->ux_hat_d_1, SC->uy_hat_d_1, SC->uz_hat_d_1,  SC->ux_hat_d_2, SC->uy_hat_d_2, SC->uz_hat_d_2,  SC->ux_hat_d_3, SC->uy_hat_d_3, SC->uz_hat_d_3,  SC->fx_hat_d, SC->fy_hat_d, SC->fz_hat_d, SC->Qx_hat_d, SC->Qy_hat_d, SC->Qz_hat_d, SC->div_hat_d, SC->kx_nabla_d,  SC->ky_nabla_d, SC->kz_nabla_d, SC->din_diffusion_d, SC->din_poisson_d, SC->AM_11_d, SC->AM_22_d, SC->AM_33_d,  SC->AM_12_d, SC->AM_13_d, SC->AM_23_d);
-	
+	//returns RHS on a vector in v*.
+	return_RHS(SC->dimGrid, SC->dimBlock, SC->dimGrid_C, SC->dimBlock_C, SC->dx, SC->dy, SC->dz, SC->Re, SC->Nx, SC->Ny, SC->Nz, SC->Mz, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d, SC->fx_hat_d, SC->fy_hat_d, SC->fz_hat_d, SC->Qx_hat_d, SC->Qy_hat_d, SC->Qz_hat_d, SC->div_hat_d, SC->kx_nabla_d,  SC->ky_nabla_d, SC->kz_nabla_d, SC->din_diffusion_d, SC->din_poisson_d, SC->AM_11_d, SC->AM_22_d, SC->AM_33_d,  SC->AM_12_d, SC->AM_13_d, SC->AM_23_d, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d);
+
+
+
 
 	A_vector_from_velocities_reduced_kernel<<< blocks, threads>>>(N_Arnoldi, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d, vec_f_out);
 		
-
-
 }
+
+
+
 
 
 
@@ -524,6 +520,87 @@ void Axb_exponent_invert(struct_NS3D_RK3_iExp_Call *SC_exponential, real * vec_f
 
 
 
+void NSCallMatrixVector_exponential_rotated_reduced(struct_NS3D_RK3_iExp_Call *SC, real * vec_f_in, real * vec_f_out){
+
+
+	int N_Arnoldi=(SC->Nx)*(SC->Ny)*(SC->Mz);
+	dim3 threads(BLOCKSIZE);
+	int blocks_x=(N_Arnoldi+BLOCKSIZE)/BLOCKSIZE;
+	dim3 blocks(blocks_x);
+
+	int Timesteps_period=SC->Timesteps_period;
+
+	real shift_rotate_real=SC->shift_real*cos(SC->rotate_angle);
+	real shift_rotate_imag=SC->shift_real*sin(SC->rotate_angle);
+
+
+	velocities_from_A_vector_reduced_kernel<<< blocks, threads>>>(N_Arnoldi, &vec_f_in[0], SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d);
+
+	for(int tt=0;tt<Timesteps_period;tt++){
+
+		single_time_step_iUV_RHS(SC->dimGrid, SC->dimBlock, SC->dimGrid_C, SC->dimBlock_C, SC->dx, SC->dy, SC->dz, SC->dt, SC->Re, SC->Nx, SC->Ny, SC->Nz, SC->Mz, SC->ux_hat_d, SC->uy_hat_d, SC->uz_hat_d,  SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d,  SC->Qx_hat_d, SC->Qy_hat_d, SC->Qz_hat_d, SC->div_hat_d, SC->kx_nabla_d,  SC->ky_nabla_d, SC->kz_nabla_d, SC->din_diffusion_d, SC->din_poisson_d, SC->AM_11_d, SC->AM_22_d, SC->AM_33_d,  SC->AM_12_d, SC->AM_13_d, SC->AM_23_d);
+		
+	}
+
+	//apply shifting and store vectors back
+	A_vector_from_velocities_reduced_shifted_rotated_kernel_Real<<< blocks, threads>>>(N_Arnoldi, vec_f_in, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d, vec_f_out, shift_rotate_real, shift_rotate_imag);
+	
+
+	velocities_from_A_vector_reduced_kernel<<< blocks, threads>>>(N_Arnoldi, &vec_f_in[3*N_Arnoldi-3], SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d);
+
+	for(int tt=0;tt<Timesteps_period;tt++){
+
+		single_time_step_iUV_RHS(SC->dimGrid, SC->dimBlock, SC->dimGrid_C, SC->dimBlock_C, SC->dx, SC->dy, SC->dz, SC->dt, SC->Re, SC->Nx, SC->Ny, SC->Nz, SC->Mz, SC->ux_hat_d, SC->uy_hat_d, SC->uz_hat_d,  SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d,  SC->Qx_hat_d, SC->Qy_hat_d, SC->Qz_hat_d, SC->div_hat_d, SC->kx_nabla_d,  SC->ky_nabla_d, SC->kz_nabla_d, SC->din_diffusion_d, SC->din_poisson_d, SC->AM_11_d, SC->AM_22_d, SC->AM_33_d,  SC->AM_12_d, SC->AM_13_d, SC->AM_23_d);
+		
+	}
+
+	A_vector_from_velocities_reduced_shifted_rotated_kernel_Real<<< blocks, threads>>>(N_Arnoldi, vec_f_in, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d, vec_f_out, shift_rotate_real, shift_rotate_imag);
+
+}
+
+
+
+// inverce rotated matrix exponent
+void Axb_rotated_exponent_invert(struct_NS3D_RK3_iExp_Call *SC_exponential, real * vec_f_in, real * vec_f_out){
+
+	int L=SC_exponential->BiCG_L;
+	int N=(SC_exponential->Nx)*(SC_exponential->Ny)*(SC_exponential->Mz);
+
+	real *tol=new real[1];
+	tol[0]=SC_exponential->BiCG_tol;
+	int *Iter=new int[1];
+	Iter[0]=SC_exponential->BiCG_Iter;
+	cublasHandle_t handle=SC_exponential->handle;
+	//NSCallMatrixVector_exponential_reduced(SC_exponential, vec_f_in, vec_f_out);
+
+
+
+	int res_flag=BiCGStabL(handle, L, 6*N-6, (user_map_vector) NSCallMatrixVector_exponential_rotated_reduced, (struct_NS3D_RK3_iExp_Call*) SC_exponential, vec_f_out, vec_f_in, tol, Iter, false, 1); //true->false; 10->ommit!
+	switch (res_flag){
+		case 0: //timer_print();
+				//printf("converged with: %le, and %i iterations\n", tol[0], Iter[0]);
+				//printf("%.03le ",tol[0]); 
+				//printf("%i, %.03le|",Iter[0], tol[0]); 
+				printf("%i|", Iter[0]); 
+				fflush(stdout);
+				break;
+		case 1: //timer_print();
+				printf("not converged with: %le, and %i iterations\n", tol[0], Iter[0]);
+				exit(-1);
+				break;
+		case -1: printf("rho is 0 with: %le, and %i iterations\n", tol[0], Iter[0]);
+				exit(-1);
+				break;
+		case -2: printf("omega is with: %le, and %i iterations\n", tol[0], Iter[0]);
+				exit(-1);
+				break;
+		case -3: printf("NANs with: %le, and %i iterations\n", tol[0], Iter[0]);
+				exit(-1);
+				break;
+	}
+	
+	delete [] tol, Iter;
+}
 
 
 
@@ -1445,7 +1522,7 @@ int main (int argc, char *argv[])
 	//for periodic and quasiperiodic problems!
 	//NS3D_Call->Timesteps_period=1;
 	NS3D_Call->Timesteps_period=Timesteps_period;//3478;
-
+	NS3D_Call->tau=5.0E0;// ''timestep'' for Newton's method
 
 
 
@@ -1538,12 +1615,40 @@ int main (int argc, char *argv[])
 	NS3D_Call_iExp->Timesteps_period=10;//3478;
 
 	//init BICGStab(L) properties
-	NS3D_Call_iExp->shift_real=1.01;
-	NS3D_Call_iExp->BiCG_L=5;
+	NS3D_Call_iExp->shift_real=1.05;
+	NS3D_Call_iExp->rotate_angle=0.01;
+	NS3D_Call_iExp->BiCG_L=6;
 	NS3D_Call_iExp->BiCG_tol=1.0e-9;
 	NS3D_Call_iExp->BiCG_Iter=N_Arnoldi;
 	NS3D_Call_iExp->handle=handle;
 
+
+	int *iter_newton=new int[1];
+	real *tol_newton=new real[1];
+	iter_newton[0]=1000;
+	tol_newton[0]=5.0e-7;
+	//test Newton!!!
+	real *Newton_x_initial_d, *Newton_x_d;
+	device_allocate_all_real(N_Arnoldi-3, 1, 1, 2, &Newton_x_initial_d, &Newton_x_d);
+
+	//init x_initial
+	int N_array=(Nx)*(Ny)*(Mz);
+	dim3 threads(BLOCKSIZE);
+	int blocks_x=(N_Arnoldi+BLOCKSIZE)/BLOCKSIZE;
+	dim3 blocks(blocks_x);
+	A_vector_from_velocities_reduced_kernel<<< blocks, threads>>>(N_Arnoldi/3, ux_hat_d, uy_hat_d, uz_hat_d, Newton_x_d);
+//	Arnoldi::set_initial_Krylov_vector_value_GPU(N_Arnoldi, Newton_x_d);
+
+	
+
+//	Newton(handle, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call,  (user_map_vector) NSCallRHS_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, N_Arnoldi-3, Newton_x_d, tol_newton, iter_newton, 5.0e-7, 2500, true, 1);
+
+//	velocities_from_A_vector_reduced_kernel<<< blocks, threads>>>(N_Arnoldi/3, Newton_x_d, ux_hat_d, uy_hat_d, uz_hat_d);
+
+	device_deallocate_all_real(2, Newton_x_initial_d, Newton_x_d);
+	delete [] tol_newton, iter_newton;
+
+	//test Newton ends
 
 
 	//call Arnoldi method with linearised function
@@ -1562,7 +1667,10 @@ int main (int argc, char *argv[])
 		
 		//res_tol=Implicit_restart_Arnoldi_GPU_data(handle, true, N_Arnoldi-3, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call,  vec_f_d, what, k_A, m, eigenvaluesA, IRA_tol, IRA_iterations,eigvs_real,eigvs_imag); //_exponential
 		
-		res_tol=Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(handle, true, N_Arnoldi-3, (user_map_vector) Axb_exponent_invert, (struct_NS3D_RK3_iExp_Call *) NS3D_Call_iExp, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, vec_f_d, "LR", "LM", k_A, m, eigenvaluesA, IRA_tol, IRA_iterations, eigvs_real,eigvs_imag);
+		//for pure real shift
+		//res_tol=Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(handle, true, N_Arnoldi-3, (user_map_vector) Axb_exponent_invert, (struct_NS3D_RK3_iExp_Call *) NS3D_Call_iExp, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, vec_f_d, "LR", "LM", k_A, m, eigenvaluesA, IRA_tol, IRA_iterations, eigvs_real,eigvs_imag);
+
+		res_tol=Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(handle, true, 2*N_Arnoldi-6, (user_map_vector) Axb_rotated_exponent_invert, (struct_NS3D_RK3_iExp_Call *) NS3D_Call_iExp, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, vec_f_d, "LR", "LM", k_A, m, eigenvaluesA, IRA_tol, IRA_iterations, eigvs_real, eigvs_imag);
 	}
 	else{
 		what[0]='L';
