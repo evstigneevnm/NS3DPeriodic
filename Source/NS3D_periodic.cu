@@ -554,7 +554,7 @@ void NSCallMatrixVector_exponential_rotated_reduced(struct_NS3D_RK3_iExp_Call *S
 		
 	}
 
-	A_vector_from_velocities_reduced_shifted_rotated_kernel_Real<<< blocks, threads>>>(N_Arnoldi, vec_f_in, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d, vec_f_out, shift_rotate_real, shift_rotate_imag);
+	A_vector_from_velocities_reduced_shifted_rotated_kernel_Imag<<< blocks, threads>>>(N_Arnoldi, vec_f_in, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d, vec_f_out, shift_rotate_real, shift_rotate_imag);
 
 }
 
@@ -1527,24 +1527,7 @@ int main (int argc, char *argv[])
 
 
 	int N_Arnoldi=3*Nx*Ny*Mz;
-	double *vec_f=new double[N_Arnoldi];
-	double *vec_v=new double[N_Arnoldi];
-	double *vec_f_d, *vec_v_d;
 
-	device_allocate_all_real(N_Arnoldi-3, 1, 1, 2, &vec_f_d, &vec_v_d);
-
-
-	for (int i = 0; i < N_Arnoldi; ++i)
-	{
-		vec_f[i]=rand_normal(0.0, 1.0);
-		vec_v[i]=0.0;
-		//vec_f[i]=2.0*rand()/RAND_MAX - 1;
-	}
-	vec_v[0]=1;
-	normalize(N_Arnoldi, vec_f);
-	
-	device_host_real_cpy(vec_f_d, vec_f, N_Arnoldi-3, 1, 1);
-	device_host_real_cpy(vec_v_d, vec_v, N_Arnoldi-3, 1, 1);
 
 	real res_tol=1;
 	//int k_A=6, m_A=3; //initialized at the start of main from parameters or from default k_A=6, m_A=3.
@@ -1658,24 +1641,23 @@ int main (int argc, char *argv[])
 
 
 
-
 	printf("\nArnoldi starts\n");
 	if(Timesteps_period==0){
 		printf("\nSkipping IRA! \n");
 	}
 	else if(Timesteps_period==1){
 		
-		//res_tol=Implicit_restart_Arnoldi_GPU_data(handle, true, N_Arnoldi-3, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call,  vec_f_d, what, k_A, m, eigenvaluesA, IRA_tol, IRA_iterations,eigvs_real,eigvs_imag); //_exponential
+		//res_tol=Implicit_restart_Arnoldi_GPU_data(handle, true, N_Arnoldi-3, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call,  what, k_A, m, eigenvaluesA, IRA_tol, IRA_iterations,eigvs_real,eigvs_imag); //_exponential
 		
 		//for pure real shift
-		//res_tol=Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(handle, true, N_Arnoldi-3, (user_map_vector) Axb_exponent_invert, (struct_NS3D_RK3_iExp_Call *) NS3D_Call_iExp, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, vec_f_d, "LR", "LM", k_A, m, eigenvaluesA, IRA_tol, IRA_iterations, eigvs_real,eigvs_imag);
+		//res_tol=Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(handle, true, N_Arnoldi-3, (user_map_vector) Axb_exponent_invert, (struct_NS3D_RK3_iExp_Call *) NS3D_Call_iExp, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, "LR", "LM", k_A, m, eigenvaluesA, IRA_tol, IRA_iterations, eigvs_real,eigvs_imag);
 
-		res_tol=Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(handle, true, 2*N_Arnoldi-6, (user_map_vector) Axb_rotated_exponent_invert, (struct_NS3D_RK3_iExp_Call *) NS3D_Call_iExp, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, vec_f_d, "LR", "LM", k_A, m, eigenvaluesA, IRA_tol, IRA_iterations, eigvs_real, eigvs_imag);
+		res_tol=Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(handle, true, N_Arnoldi-3, (user_map_vector) Axb_rotated_exponent_invert, (struct_NS3D_RK3_iExp_Call *) NS3D_Call_iExp, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, "LR", "LM", k_A, m, eigenvaluesA, IRA_tol, IRA_iterations, eigvs_real, eigvs_imag);
 	}
 	else{
 		what[0]='L';
 		what[1]='M';
-		res_tol=Implicit_restart_Arnoldi_GPU_data(handle, true, N_Arnoldi-3, (user_map_vector) NSCallMatrixVector_exponential, (struct_NS3D_RK3_Call *) NS3D_Call,  vec_f_d, what, k_A, m, eigenvaluesA, IRA_tol, IRA_iterations,eigvs_real,eigvs_imag); //_exponential		
+		res_tol=Implicit_restart_Arnoldi_GPU_data(handle, true, N_Arnoldi-3, (user_map_vector) NSCallMatrixVector_exponential, (struct_NS3D_RK3_Call *) NS3D_Call,  what, k_A, m, eigenvaluesA, IRA_tol, IRA_iterations,eigvs_real,eigvs_imag); //_exponential		
 
 	}
 
@@ -1714,17 +1696,8 @@ int main (int argc, char *argv[])
 	delete [] eigenvaluesA;
 	device_deallocate_all_real(2,eigvs_real, eigvs_imag);
 
-	host_device_real_cpy(vec_f, vec_f_d, N_Arnoldi-3, 1, 1); //!!! -3 !!!
-	host_device_real_cpy(vec_v, vec_v_d, N_Arnoldi-3, 1, 1); //!!! -3 !!!
-
-	print_vector("f0.dat", N_Arnoldi, vec_f);
-	print_vector("v0.dat", N_Arnoldi, vec_v);
-
-
-	device_deallocate_all_real(2, vec_f_d, vec_v_d );
 	device_deallocate_all_complex(3, vx_hat_d, vy_hat_d, vz_hat_d);
 	device_deallocate_all_complex(3, vx_hat_d_1, vy_hat_d_1, vz_hat_d_1);
-	delete [] vec_f, vec_v;
 
 	delete [] NS3D_Call;
 
