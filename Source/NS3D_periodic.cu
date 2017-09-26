@@ -1652,7 +1652,7 @@ int main (int argc, char *argv[])
 		//for pure real shift
 		//res_tol=Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(handle, true, N_Arnoldi-3, (user_map_vector) Axb_exponent_invert, (struct_NS3D_RK3_iExp_Call *) NS3D_Call_iExp, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, "LR", "LM", k_A, m, eigenvaluesA, IRA_tol, IRA_iterations, eigvs_real,eigvs_imag);
 
-		res_tol=Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(handle, true, N_Arnoldi-3, (user_map_vector) Axb_rotated_exponent_invert, (struct_NS3D_RK3_iExp_Call *) NS3D_Call_iExp, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, "LR", "LM", k_A, m, eigenvaluesA, IRA_tol, IRA_iterations, eigvs_real, eigvs_imag);
+		res_tol=Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(handle, true, N_Arnoldi-3, (user_map_vector) Axb_rotated_exponent_invert, (struct_NS3D_RK3_iExp_Call *) NS3D_Call_iExp, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, "LR", "LM", k_A, m, eigenvaluesA, IRA_tol, IRA_iterations, false,  eigvs_real, eigvs_imag);
 	}
 	else{
 		what[0]='L';
