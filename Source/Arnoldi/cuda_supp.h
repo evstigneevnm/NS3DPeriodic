@@ -16,7 +16,7 @@ namespace Arnoldi
 {
 
 void check_for_nans(char message[], int Size, real *array);
-
+double rand_normal(double mean, double stddev);
 bool InitCUDA(int GPU_number);
 real* device_allocate_real(int Nx, int Ny);
 real* device_allocate_real(int Nx, int Ny, int Nz);

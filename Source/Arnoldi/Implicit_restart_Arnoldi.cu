@@ -355,7 +355,7 @@ real Implicit_restart_Arnoldi_GPU_data(cublasHandle_t handle, bool verbose, int 
 real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bool verbose, int N,  user_map_vector Axb_exponent_invert, void *user_struct_exponent_invert, user_map_vector Axb, void *user_struct,  char which[2], char which_exponent[2], int k, int m, complex real* eigenvaluesA, real tol, int max_iter, bool is_rotated, real *eigenvectors_real_d, real *eigenvectors_imag_d, int BLASThreads){
 
 
-    
+    srand ( time(NULL) );
     openblas_set_num_threads(BLASThreads); //sets number of threads to be used by OpenBLAS
     
     //size of the rotated problem is double to the original one.
@@ -385,6 +385,12 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bo
     real *ritz_vector=new real[m];
 
     real *V_d, *V1_d, *Q_d; //matrixes on GPU
+    real *vec_f=new real[N_rotational];
+    for(int j=0;j<N_rotational;j++){
+        vec_f[j]=Arnoldi::rand_normal(1.0, 0.0);
+    }
+        
+
     real *vec_f_d;
     real *vec_f1_d, *vec_v_d, *vec_w_d, *vec_c_d, *vec_h_d, *vec_q_d; //vectors on GPU
     //real *Vl_r_d, *Vl_i_d, *Vr_r_d, *Vr_i_d, *Vre_d, *Vim_d; //vectors on GPU for eigenvector residuals
@@ -401,7 +407,10 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bo
     Arnoldi::device_allocate_all_real(m, m, 1, 1, &Q_d);
     //Arnoldi::device_allocate_all_real(N, 1,1, 6, &Vl_r_d, &Vl_i_d, &Vr_r_d, &Vr_i_d, &Vre_d, &Vim_d);
     //sets initial guesses for Krylov vectors
-    Arnoldi::set_initial_Krylov_vector_value_GPU(N_rotational, vec_f_d);
+    //Arnoldi::set_initial_Krylov_vector_value_GPU(N_rotational, vec_f_d);
+    Arnoldi::to_device_from_host_real_cpy(vec_f_d, vec_f, N_rotational, 1,1);
+    delete [] vec_f;
+
     Arnoldi::set_initial_Krylov_vector_value_GPU(N_rotational, vec_f1_d);
     Arnoldi::set_initial_Krylov_vector_value_GPU(N_rotational, vec_v_d);
     Arnoldi::set_initial_Krylov_vector_value_GPU(N_rotational, vec_w_d);
