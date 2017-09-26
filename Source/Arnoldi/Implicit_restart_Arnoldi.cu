@@ -387,7 +387,7 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bo
     real *V_d, *V1_d, *Q_d; //matrixes on GPU
     real *vec_f=new real[N_rotational];
     for(int j=0;j<N_rotational;j++){
-        vec_f[j]=Arnoldi::rand_normal(1.0, 0.0);
+        vec_f[j]=(real)Arnoldi::rand_normal(0.0, 1.0);
     }
         
 
@@ -432,7 +432,7 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bo
         Arnoldi_driver(handle, N_rotational, Axb_exponent_invert, user_struct_exponent_invert, V_d, H, vec_f_d, k0-1, m, vec_v_d, vec_w_d, vec_c_d, vec_h_d, vec_h);   //Build orthogonal Krylov subspace
         
 
-        select_shifts(m, H, which_exponent, eigenvectorsH, eigenvaluesH, ritz_vector); //select basisi shift depending on 'which'
+        select_shifts(m, H, which_exponent, eigenvectorsH, eigenvaluesH, ritz_vector); //select basis shift depending on 'which'
 
         QR_shifts(k, m, Q, H, eigenvaluesH, &k0); //Do QR shifts of basis. Returns active eigenvalue indexes and Q-matrix for basis shift
         
@@ -554,7 +554,7 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bo
     real *residualAV_imag=new real[k];
     
 
-    if(is_rotated){
+    if(!is_rotated){
         compute_eigensystem_of_original_mapping_no_rotation(handle, Axb, user_struct, k, m, N_rotational,  which, residualAV_real, residualAV_imag, eigenvaluesH_kk, eigenvectorsH_kk, eigenvectorsH_kk_sorted, eigenvectorsA_d, V_d, V1_d, Q_Schur_d);
     }
     else{
