@@ -253,7 +253,7 @@ void permute_matrix_colums(int MatrixRaw, int coloms, int *sorted_list, real com
 
 
 void compute_eigensystem_of_original_mapping_no_rotation(cublasHandle_t handle, user_map_vector Axb, void *user_struct, int k, int m, int N, char which[2], real *residualAV_real, real *residualAV_imag, real complex *eigenvaluesH_kk, real complex *eigenvectorsH_kk, real complex *eigenvectorsH_kk_sorted, cublasComplex *eigenvectorsA_d, real *V_d, real *V1_d, real *Q_Schur_d){
-
+    //on input eigenvectors are in V1_d
 
     cublasComplex *eigenvectorsH_d,  *eigenvectorsA_unsorted_d, *eigenvectorsA_sorted_d;
     real *Vcolres_d, *VRres_d;
@@ -273,10 +273,10 @@ void compute_eigensystem_of_original_mapping_no_rotation(cublasHandle_t handle, 
    
 
     //check residual!
-    for(int i=0;i<k;i++){
-        Axb(user_struct, &V1_d[i*N], &Vcolres_d[i*N]);
-        Arnoldi::check_for_nans("IRA: Schur basis projeciton out in residual", N, &Vcolres_d[i*N]);
-    }   
+//    for(int i=0;i<k;i++){
+//        Axb(user_struct, &V1_d[i*N], &Vcolres_d[i*N]);
+//        Arnoldi::check_for_nans("IRA: Schur basis projeciton out in residual", N, &Vcolres_d[i*N]);
+//    }   
     Arnoldi::matrixMultMatrix_GPU(handle, N, k, k, V1_d, 1.0, Q_Schur_d, 0.0, VRres_d);
     for(int i=0;i<k;i++){
         Arnoldi::vectors_add_GPU(handle, N, -1.0, &Vcolres_d[i*N], &VRres_d[i*N]);
@@ -311,7 +311,7 @@ void compute_eigensystem_of_original_mapping_no_rotation(cublasHandle_t handle, 
     // Now store EigenvectorsH to GPU as cublasComplex.
     real_complex_to_cublas_complex(k*k, eigenvectorsH_kk_sorted,  eigenvectorsH_d);
 
-    real_device_to_cublas_complex(N*k, V_d, eigenvectorsA_unsorted_d);
+    real_device_to_cublas_complex(N*k, V1_d, eigenvectorsA_unsorted_d); //check here V_d or V1_d!!!
     
     Arnoldi::to_device_from_host_int_cpy(sorted_list_d, sorted_list, k, 1, 1);
 
@@ -331,6 +331,107 @@ void compute_eigensystem_of_original_mapping_no_rotation(cublasHandle_t handle, 
 
 
 
+void compute_eigensystem_of_original_mapping_rotation(cublasHandle_t handle, user_map_vector Axb, void *user_struct, int k, int m, int N, int N_rotational, char which[2], real *residualAV_real, real *residualAV_imag, real complex *eigenvaluesH_kk, real complex *eigenvectorsH_kk, real complex *eigenvectorsH_kk_sorted, cublasComplex *eigenvectorsA_d, real *V1_d){
+    //on input eigenvectors are in V1_d
+
+    cublasComplex *eigenvectorsH_d,  *eigenvectorsA_unsorted_d, *eigenvectorsA_sorted_d;
+    real *V_real_d, *V_imag_d;
+    real *V_real1_d, *V_imag1_d;
+    real *V_real2_d, *V_imag2_d;
+    real *R_real_d, *R_imag_d, *R_d;
+    real *V_summ_d;
+
+    eigenvectorsH_d=Arnoldi::device_allocate_complex(k, k, 1);
+    eigenvectorsA_unsorted_d=Arnoldi::device_allocate_complex(N, k, 1);
+    eigenvectorsA_sorted_d=Arnoldi::device_allocate_complex(N, k, 1);
+    
+    Arnoldi::device_allocate_all_real(N, k, 1, 6, &V_real_d, &V_imag_d, &V_real1_d, &V_imag1_d, &V_real2_d, &V_imag2_d);
+    Arnoldi::device_allocate_all_real(k, k, 1, 3, &R_real_d, &R_imag_d, &R_d);
+
+    
+    //gets real and imag parts of rotational eigenvectors
+    for(int j=0;j<k;j++){
+        Arnoldi::vector_copy_GPU(handle, N, &V1_d[j*N_rotational], &V_real_d[j*N]);
+        Arnoldi::vector_copy_GPU(handle, N, &V1_d[j*N_rotational+N], &V_imag_d[j*N]);
+    }
+
+    //get Schur form for real part
+    for(int i=0;i<k;i++){
+        //Axb is the original mapping and it works with size = N, i.e. N=N_rotational/2.
+        Axb(user_struct, &V_real_d[i*N], &V_real1_d[i*N]);
+        Arnoldi::check_for_nans("IRA: Schur basis projeciton out real part", N, &V_real1_d[i*N]);
+    }
+    Arnoldi::matrixTMultMatrix_GPU(handle, k, k, N, V_real_d, 1.0, V_real1_d, 0.0, R_real_d); 
+
+    //get Schur form for imag part
+    for(int i=0;i<k;i++){
+        //Axb is the original mapping and it works with size = N, i.e. N=N_rotational/2.
+        Axb(user_struct, &V_imag_d[i*N], &V_imag1_d[i*N]);
+        Arnoldi::check_for_nans("IRA: Schur basis projeciton out imag part", N, &V_imag1_d[i*N]);
+    }
+    Arnoldi::matrixTMultMatrix_GPU(handle, k, k, N, V_imag_d, 1.0, V_imag1_d, 0.0, R_d/*R_imag_d*/); //this is due to the CUBLAS operation that overwrits added vector, so R_d:=R_imag_d here.
+    Arnoldi::vectors_add_GPU(handle, k*k, 1, R_real_d, R_d); //R_d=R_real_d+R_imag_d.
+
+    //check residual of the rotated eigenvalues applied to the original mapping!
+    Arnoldi::matrixMultMatrix_GPU(handle, N, k, k, V_real_d, 1.0, R_d, 0.0, V_real2_d);
+    Arnoldi::matrixMultMatrix_GPU(handle, N, k, k, V_imag_d, 1.0, R_d, 0.0, V_imag2_d);
+    for(int i=0;i<k;i++){
+        Arnoldi::vectors_add_GPU(handle, N, -1.0, &V_real1_d[i*N], &V_real2_d[i*N]);
+        Arnoldi::vectors_add_GPU(handle, N, -1.0, &V_imag1_d[i*N], &V_imag2_d[i*N]);
+        residualAV_real[i]=Arnoldi::vector_norm2_GPU(handle, N, &V_real2_d[i*N]);
+        residualAV_imag[i]=Arnoldi::vector_norm2_GPU(handle, N, &V_imag2_d[i*N]);
+    }
+    //done
+
+    real *H_Schur=new real[k*k];
+    Arnoldi::to_host_from_device_real_cpy(H_Schur, R_d, k, k, 1);
+    Arnoldi::device_deallocate_all_real(4,  V_real1_d, V_imag1_d,  V_real2_d, V_imag2_d);
+
+
+    real complex *HC=new real complex[k*k];
+    for(int i=0;i<k;i++){
+        for(int j=0;j<k;j++){
+            HC[I2(i,j,k)]=H_Schur[I2(i,j,k)]+0.0*I;
+        }
+    }
+    MatrixComplexEigensystem(eigenvectorsH_kk, eigenvaluesH_kk, HC, k);
+
+    delete [] HC;
+    delete [] H_Schur;
+
+    int *sorted_list=new int[k];
+    int *sorted_list_d=Arnoldi::device_allocate_int(k, 1, 1);
+    get_sorted_index(k, which, eigenvaluesH_kk, sorted_list);
+
+    //sort eigenvectors of Shur form of Hessinberg matrix
+    permute_matrix_colums(k, k, sorted_list, eigenvectorsH_kk,  eigenvectorsH_kk_sorted);
+    // Now store EigenvectorsH to GPU as cublasComplex.
+    real_complex_to_cublas_complex(k*k, eigenvectorsH_kk_sorted,  eigenvectorsH_d);
+
+    //get eigenvectors of the original mapping by Galerkin projection
+    Arnoldi::device_allocate_all_real(N, k, 1, 1, &V_summ_d);
+    Arnoldi::vector_copy_GPU(handle, N*k, V_real_d, V_summ_d);
+    Arnoldi::vectors_add_GPU(handle, N*k, 1, V_imag_d, V_summ_d);
+
+    real_device_to_cublas_complex(N*k, V_summ_d, eigenvectorsA_unsorted_d);
+
+    
+    Arnoldi::to_device_from_host_int_cpy(sorted_list_d, sorted_list, k, 1, 1);
+
+    Arnoldi::matrixMultComplexMatrix_GPU(handle, N, k, k, eigenvectorsA_unsorted_d, eigenvectorsH_d, eigenvectorsA_sorted_d); //here eigenvectorsA_d contain sorted eigenvectors of original problem
+
+    permute_matrix_colums(N, k, sorted_list_d, eigenvectorsA_sorted_d, eigenvectorsA_d); //just to make shure they are sorted =)
+
+    cudaFree(sorted_list_d);            //ok
+    delete [] sorted_list;              //ok
+    cudaFree(eigenvectorsH_d);
+    cudaFree(eigenvectorsA_unsorted_d);
+    cudaFree(eigenvectorsA_sorted_d);
+    Arnoldi::device_deallocate_all_real(6, V_real_d, V_imag_d, V_summ_d, R_real_d, R_imag_d, R_d);
+
+
+
+}
 
 
 
@@ -558,7 +659,7 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bo
         compute_eigensystem_of_original_mapping_no_rotation(handle, Axb, user_struct, k, m, N_rotational,  which, residualAV_real, residualAV_imag, eigenvaluesH_kk, eigenvectorsH_kk, eigenvectorsH_kk_sorted, eigenvectorsA_d, V_d, V1_d, Q_Schur_d);
     }
     else{
-
+        compute_eigensystem_of_original_mapping_rotation(handle, Axb, user_struct, k, m, N,N_rotational, which, residualAV_real, residualAV_imag, eigenvaluesH_kk, eigenvectorsH_kk, eigenvectorsH_kk_sorted, eigenvectorsA_d, V1_d);
 
     }
 
@@ -585,12 +686,12 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bo
     bool do_plot=true;
     if((verbose)&&(do_plot)){
         printf("plotting output matrixes and vectors...\n");
-        real *vec_f_local=new real[N];
-        real *V_local=new real[N*m];
-        real *V1_local=new real[N*m];
-        Arnoldi::to_host_from_device_real_cpy(vec_f_local, vec_f_d, N, 1, 1); //vec_f_d -> vec_f
-        Arnoldi::to_host_from_device_real_cpy(V_local, V_d, N, m, 1); //vec_V_d -> vec_V
-        Arnoldi::to_host_from_device_real_cpy(V1_local, V1_d, N, m, 1);
+        real *vec_f_local=new real[N_rotational];
+        real *V_local=new real[N_rotational*m];
+        real *V1_local=new real[N_rotational*m];
+        Arnoldi::to_host_from_device_real_cpy(vec_f_local, vec_f_d, N_rotational, 1, 1); //vec_f_d -> vec_f
+        Arnoldi::to_host_from_device_real_cpy(V_local, V_d, N_rotational, m, 1); //vec_V_d -> vec_V
+        Arnoldi::to_host_from_device_real_cpy(V1_local, V1_d, N_rotational, m, 1);
         real complex *eigenvectorsA=new real complex[N*k];
 
         cublas_complex_to_complex_real(N*k, eigenvectorsA_d, eigenvectorsA);
@@ -601,10 +702,10 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bo
         Arnoldi::to_host_from_device_real_cpy(V_imag_local, eigenvectors_imag_d, N, k, 1);
 
         print_matrix("EigVecA.dat", N, k, eigenvectorsA);
-        print_matrix("V1.dat", N, k, V1_local);
+        print_matrix("V1.dat", N_rotational, k, V1_local);
         print_matrix("V_real.dat", N, k, V_real_local);//eigenvectors_real_d
         print_matrix("V_imag.dat", N, k, V_imag_local);//eigenvectors_imag_d
-        print_matrix("V.dat", N, k, V_local);
+        print_matrix("V.dat", N_rotational, k, V_local);
         print_matrix("H.dat", m, m, H);
         print_matrix("H1.dat", m, m, H1);
         print_matrix("H2.dat", m, m, H2);
@@ -612,7 +713,7 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bo
         print_matrix("Q.dat", m, m, Q); 
         print_matrix("EigVecH.dat", k, k, eigenvectorsH_kk_sorted);
         print_vector("EigH.dat", k, eigenvaluesH_kk);
-        print_vector("f.dat", N, vec_f_local);  
+        print_vector("f.dat", N_rotational, vec_f_local);  
 
         delete [] eigenvectorsA, vec_f_local, V_local, V1_local;
         delete [] V_real_local,V_imag_local;
