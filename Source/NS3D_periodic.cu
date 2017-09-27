@@ -1599,7 +1599,7 @@ int main (int argc, char *argv[])
 
 	//init BICGStab(L) properties
 	NS3D_Call_iExp->shift_real=1.01;
-	NS3D_Call_iExp->rotate_angle=0.00;
+	NS3D_Call_iExp->rotate_angle=0.01;
 	NS3D_Call_iExp->BiCG_L=6;
 	NS3D_Call_iExp->BiCG_tol=1.0e-9;
 	NS3D_Call_iExp->BiCG_Iter=N_Arnoldi;
@@ -1654,7 +1654,10 @@ int main (int argc, char *argv[])
 		
 		//Axb_rotated_exponent_invert
 
-		res_tol=Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(handle, true, N_Arnoldi-3, (user_map_vector) Axb_exponent_invert, (struct_NS3D_RK3_iExp_Call *) NS3D_Call_iExp, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, "LR", "LM", k_A, m, eigenvaluesA, IRA_tol, IRA_iterations, false,  eigvs_real, eigvs_imag);
+		//res_tol=Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(handle, true, N_Arnoldi-3, (user_map_vector) Axb_exponent_invert, (struct_NS3D_RK3_iExp_Call *) NS3D_Call_iExp, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, "LR", "LM", k_A, m, eigenvaluesA, IRA_tol, IRA_iterations, false,  eigvs_real, eigvs_imag);
+
+		res_tol=Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(handle, true, N_Arnoldi-3, (user_map_vector) Axb_rotated_exponent_invert, (struct_NS3D_RK3_iExp_Call *) NS3D_Call_iExp, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, "LR", "LM", k_A, m, eigenvaluesA, IRA_tol, IRA_iterations, true,  eigvs_real, eigvs_imag);
+
 
 	}
 	else{

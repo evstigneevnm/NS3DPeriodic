@@ -387,7 +387,7 @@ real Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(cublasHandle_t handle, bo
     real *V_d, *V1_d, *Q_d; //matrixes on GPU
     real *vec_f=new real[N_rotational];
     for(int j=0;j<N_rotational;j++){
-        vec_f[j]=(real)Arnoldi::rand_normal(0.0, 1.0);
+        vec_f[j]=(real)Arnoldi::rand_normal(0.0, 2.0);
     }
         
 
