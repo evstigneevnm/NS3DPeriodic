@@ -343,6 +343,30 @@ void NSCallMatrixVector_reduced(struct_NS3D_RK3_Call *SC, double * vec_f_in, dou
 	dim3 threads(BLOCKSIZE);
 	int blocks_x=(N_Arnoldi+BLOCKSIZE)/BLOCKSIZE;
 	dim3 blocks(blocks_x);
+	//real one_over_tau=1.0/(SC->tau);
+
+	velocities_from_A_vector_reduced_kernel<<< blocks, threads>>>(N_Arnoldi, vec_f_in, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d);
+	
+	
+	//returns application of Jacobi matrix on a vector in v*, linearized arround u*.
+	RK3_SSP_UV_RHS(SC->dimGrid, SC->dimBlock, SC->dimGrid_C, SC->dimBlock_C, SC->dx, SC->dy, SC->dz, SC->dt, SC->Re, SC->Nx, SC->Ny, SC->Nz, SC->Mz, SC->ux_hat_d, SC->uy_hat_d, SC->uz_hat_d,  SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d, SC->ux_hat_d_1, SC->uy_hat_d_1, SC->uz_hat_d_1,  SC->ux_hat_d_2, SC->uy_hat_d_2, SC->uz_hat_d_2,  SC->ux_hat_d_3, SC->uy_hat_d_3, SC->uz_hat_d_3,  SC->fx_hat_d, SC->fy_hat_d, SC->fz_hat_d, SC->Qx_hat_d, SC->Qy_hat_d, SC->Qz_hat_d, SC->div_hat_d, SC->kx_nabla_d,  SC->ky_nabla_d, SC->kz_nabla_d, SC->din_diffusion_d, SC->din_poisson_d, SC->AM_11_d, SC->AM_22_d, SC->AM_33_d,  SC->AM_12_d, SC->AM_13_d, SC->AM_23_d);
+	
+
+
+	A_vector_from_velocities_reduced_kernel<<< blocks, threads>>>(N_Arnoldi, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d, vec_f_out);
+	
+	//A_vector_add_diagonal_kernel<<< blocks, threads>>>(N_Arnoldi, vec_f_in, one_over_tau, vec_f_out);
+
+}
+
+
+void NSCallMatrixVector_reduced_Newton_Globalization(struct_NS3D_RK3_Call *SC, double * vec_f_in, double * vec_f_out){
+
+
+	int N_Arnoldi=(SC->Nx)*(SC->Ny)*(SC->Mz);
+	dim3 threads(BLOCKSIZE);
+	int blocks_x=(N_Arnoldi+BLOCKSIZE)/BLOCKSIZE;
+	dim3 blocks(blocks_x);
 	real one_over_tau=1.0/(SC->tau);
 
 	velocities_from_A_vector_reduced_kernel<<< blocks, threads>>>(N_Arnoldi, vec_f_in, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d);
@@ -358,6 +382,8 @@ void NSCallMatrixVector_reduced(struct_NS3D_RK3_Call *SC, double * vec_f_in, dou
 	A_vector_add_diagonal_kernel<<< blocks, threads>>>(N_Arnoldi, vec_f_in, one_over_tau, vec_f_out);
 
 }
+
+
 /*
 void NSCallMatrixVector_reduced(struct_NS3D_RK3_Call *SC, double* vec_u_in, double * vec_f_in, double * vec_f_out){
 
@@ -1595,11 +1621,11 @@ int main (int argc, char *argv[])
 	NS3D_Call_iExp->AM_12_d=AM_12_d;
 	NS3D_Call_iExp->AM_13_d=AM_13_d;
 	NS3D_Call_iExp->AM_23_d=AM_23_d;
-	NS3D_Call_iExp->Timesteps_period=10;//3478;
+	NS3D_Call_iExp->Timesteps_period=3;//3478;
 
 	//init BICGStab(L) properties
-	NS3D_Call_iExp->shift_real=1.01;
-	NS3D_Call_iExp->rotate_angle=0.01;
+	NS3D_Call_iExp->shift_real=1.05;
+	NS3D_Call_iExp->rotate_angle=0.05;
 	NS3D_Call_iExp->BiCG_L=6;
 	NS3D_Call_iExp->BiCG_tol=1.0e-9;
 	NS3D_Call_iExp->BiCG_Iter=N_Arnoldi;
@@ -1624,7 +1650,7 @@ int main (int argc, char *argv[])
 
 	
 
-//	Newton(handle, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call,  (user_map_vector) NSCallRHS_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, N_Arnoldi-3, Newton_x_d, tol_newton, iter_newton, 5.0e-7, 2500, true, 1);
+//	Newton(handle, (user_map_vector) NSCallMatrixVector_reduced_Newton_Globalization, (struct_NS3D_RK3_Call *) NS3D_Call,  (user_map_vector) NSCallRHS_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, N_Arnoldi-3, Newton_x_d, tol_newton, iter_newton, 5.0e-7, 2500, true, 1);
 
 //	velocities_from_A_vector_reduced_kernel<<< blocks, threads>>>(N_Arnoldi/3, Newton_x_d, ux_hat_d, uy_hat_d, uz_hat_d);
 
@@ -1637,7 +1663,7 @@ int main (int argc, char *argv[])
 	//call Arnoldi method with linearised function
 	char what[]="LR";
 	int IRA_iterations=3000;
-	double IRA_tol=1.0e-9;
+	double IRA_tol=5.0e-8;
 
 
 
