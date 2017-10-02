@@ -322,7 +322,7 @@ void build_Jacobian(dim3 dimGrid, dim3 dimBlock, dim3 dimGrid_C, dim3 dimBlock_C
 
 void build_variational_Jacobian(dim3 dimGrid, dim3 dimBlock, dim3 dimGrid_C, dim3 dimBlock_C, real dx, real dy, real dz, real Re, int Nx, int Ny, int Nz, int Mz, cudaComplex *ux_hat_d, cudaComplex *uy_hat_d, cudaComplex *uz_hat_d,  cudaComplex *fx_hat_d, cudaComplex *fy_hat_d, cudaComplex *fz_hat_d, cudaComplex *Qx_hat_d, cudaComplex *Qy_hat_d, cudaComplex *Qz_hat_d, cudaComplex *div_hat_d, real* kx_nabla_d, real* ky_nabla_d, real *kz_nabla_d, real *din_diffusion_d, real *din_poisson_d, real *AM_11_d, real *AM_22_d, real *AM_33_d,  real *AM_12_d, real *AM_13_d, real *AM_23_d, cudaComplex *U_eps_d, cudaComplex *RHSx_plus, cudaComplex *RHSx_minus, cudaComplex *RHSy_plus, cudaComplex *RHSy_minus, cudaComplex *RHSz_plus, cudaComplex *RHSz_minus, cudaComplex *Diff_RHSx, cudaComplex *Diff_RHSy, cudaComplex *Diff_RHSz, real *Jacobian_d){
 
-
+    real eps=1.0e-12;
 
     for(int j=0;j<Nx;j++){
     for(int k=0;k<Ny;k++){
@@ -339,15 +339,15 @@ void build_variational_Jacobian(dim3 dimGrid, dim3 dimBlock, dim3 dimGrid_C, dim
         //New variables: cudaComplex *U_eps_d, *RHSx_plus, *RHSx_minus, *RHSy_plus, *RHSy_minus, *RHSz_plus, *RHSz_minus, Diff_RHSx, Diff_RHSy, Diff_RHSz
         //  real *Jacobian_d             
 
-        increment_jkl_on_unit_vector_device<<<dimGrid_C, dimBlock_C>>>(Nx, Ny, Mz, U_zero_d, 0.0, 0.0, j, k, l);
+//        increment_jkl_on_unit_vector_device<<<dimGrid_C, dimBlock_C>>>(Nx, Ny, Mz, U_zero_d, 0.0, 0.0, j, k, l);
 
         //ux, Im
 
 
-        increment_jkl_on_unit_vector_device<<<dimGrid_C, dimBlock_C>>>(Nx, Ny, Mz, U_eps_d, 0.0, eps, j, k, l);
+//        increment_jkl_on_unit_vector_device<<<dimGrid_C, dimBlock_C>>>(Nx, Ny, Mz, U_eps_d, 0.0, eps, j, k, l);
 
         //!! these vectors are overwritten!
-        RK3_SSP_UV_RHS(dimGrid, dimBlock, dimGrid_C, dimBlock_C, dx, dy, dz, dt, Re, Nx, Ny,Nz, Mz, ux_hat_d, uy_hat_d, uz_hat_d,  !!vx_hat_d, !!vy_hat_d, !!vz_hat_d, ux_hat_d, uy_hat_d, uz_hat_d,  ux_hat_d, uy_hat_d, uz_hat_d,  ux_hat_d, uy_hat_d, uz_hat_d,  fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d,  ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d,  AM_12_d, AM_13_d, AM_23_d);
+//        RK3_SSP_UV_RHS(dimGrid, dimBlock, dimGrid_C, dimBlock_C, dx, dy, dz, dt, Re, Nx, Ny,Nz, Mz, ux_hat_d, uy_hat_d, uz_hat_d,  !!vx_hat_d, !!vy_hat_d, !!vz_hat_d, ux_hat_d, uy_hat_d, uz_hat_d,  ux_hat_d, uy_hat_d, uz_hat_d,  ux_hat_d, uy_hat_d, uz_hat_d,  fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d,  ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d,  AM_12_d, AM_13_d, AM_23_d);
 
 
         Jacobian_per_Raw_device<<<dimGrid_C, dimBlock_C>>>(Nx, Ny, Mz, Diff_RHSx, Diff_RHSy, Diff_RHSz, Jacobian_d, jkl_index*3+0);
