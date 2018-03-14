@@ -24,6 +24,10 @@
 //	#define IE(i,j,k) (i)+(j)*(Nx_ext)+(k)*(Nx_ext*Ny_ext)
 #endif
 
+#ifndef I2
+    #define I2(j,k) (j)+Nx*(k)
+#endif
+
 
 
 #define FS for ( j=0 ; j<Nx ; j++ ) { for ( k=0 ; k<Ny ; k++ ) { for ( l=0 ; l<Nz ; l++ ) { 
