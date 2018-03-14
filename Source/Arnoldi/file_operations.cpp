@@ -61,7 +61,7 @@ void print_matrix(const char *f_name, int Row, int Col, real complex *matrix){
 	 		//if(cimag(matrix[I2(i,j)])<0.0)
 			// 	fprintf(stream, "%.16le%.16leI ",matrix[I2(i,j)]);
 			//else
-			 	fprintf(stream, "%.16le+%.16lei ",(double complex)matrix[I2(i,j,Row)]);				
+			 	fprintf(stream, "%.16le %.16le",(double complex)matrix[I2(i,j,Row)]);				
 	 	}
 		fprintf(stream, "\n");
 	} 
