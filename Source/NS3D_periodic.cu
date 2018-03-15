@@ -649,13 +649,6 @@ void init_complex_and_Fourier(int Nx, int Ny, int Nz, real* ux_d, cudaComplex *u
 
 
 
-void Image_to_Domain(dim3 dimGrid, dim3 dimBlock, int Nx, int Ny, int Nz, real* ux_d, cudaComplex *ux_hat_d, real* uy_d, cudaComplex *uy_hat_d, real* uz_d, cudaComplex *uz_hat_d){
-
-    iFFTN_Device(dimGrid, dimBlock, ux_hat_d, ux_d, Nx, Ny, Nz);
-    iFFTN_Device(dimGrid, dimBlock, uy_hat_d, uy_d, Nx, Ny, Nz);
-    iFFTN_Device(dimGrid, dimBlock, uz_hat_d, uz_d, Nx, Ny, Nz);
-
-}
 
 
 void Initial_Taylor_Green_vortex(int Nx, int Ny, int Nz, real dx, real dy, real dz, real *ux, real *uy, real *uz){

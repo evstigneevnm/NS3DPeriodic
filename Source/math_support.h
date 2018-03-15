@@ -16,7 +16,6 @@ void init_fft_plans(cufftHandle planR2C_l, cufftHandle planC2R_l);
 
 
 
-
 static cufftHandle planR2C_local;
 static cufftHandle planC2R_local;
 //device part
@@ -31,6 +30,9 @@ void FFTN_Device(real *source, cudaComplex *destination);
 void iFFTN_Device(cudaComplex *source, real *destination);
 void iFFTN_Device(dim3 dimGrid, dim3 dimBlock, cudaComplex *source, real *destination, int Nx, int Ny, int Nz);
 
+
+
+void Image_to_Domain(dim3 dimGrid, dim3 dimBlock, int Nx, int Ny, int Nz, real* ux_d, cudaComplex *ux_hat_d, real* uy_d, cudaComplex *uy_hat_d, real* uz_d, cudaComplex *uz_hat_d);
 
 
 void all_Fourier2double(dim3 dimGrid_C, dim3 dimBlock_C, cudaComplex *ux_hat_d, real* ux_Re_d, real* ux_Im_d, cudaComplex *uy_hat_d, real* uy_Re_d, real* uy_Im_d, cudaComplex *uz_hat_d, real* uz_Re_d, real* uz_Im_d, int Nx, int Ny, int Nz);

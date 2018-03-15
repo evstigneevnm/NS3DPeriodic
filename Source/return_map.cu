@@ -99,8 +99,10 @@ __global__ void construct_physical_vector_device(int Nx, int Ny, int Nz, int j_f
 }
 
 
-void construct_physical_vector(dim3 dimGrid, dim3 dimBlock, int Nx, int Ny, int Nz, int j_fixed, int k_fixed, int l_fixed,  real x_point, real y_point, real z_point, real *ux_d_plane, real *uy_d_plane, real *uz_d_plane, cudaComplex *ux_hat_d_plane, cudaComplex *uy_hat_d_plane, cudaComplex *uz_hat_d_plane)
+void construct_physical_vector(dim3 dimGrid, dim3 dimBlock, int Nx, int Ny, int Nz, int j_fixed, int k_fixed, int l_fixed,  real x_point, real y_point, real z_point, cudaComplex *ux_hat_d, cudaComplex *uy_hat_d, cudaComplex *uz_hat_d, real *ux_d_plane, real *uy_d_plane, real *uz_d_plane, cudaComplex *ux_hat_d_plane, cudaComplex *uy_hat_d_plane, cudaComplex *uz_hat_d_plane)
 {
+
+    Domain_to_Image(dimGrid, dimBlock,  Nx,  Ny,  Nz, ux_hat_d, ux_d_plane, uy_hat_d, uy_d_plane, uz_hat_d, uz_d_plane);
 
     construct_physical_vector_device<<<dimGrid, dimBlock>>>(Nx, Ny, Nz, j_fixed, k_fixed, l_fixed,  x_point, y_point, z_point, ux_d_plane , uy_d_plane, uz_d_plane);
 
@@ -284,10 +286,10 @@ void rotate_plane(real rhs_x, real rhs_y, real rhs_z, real plane_nx, real plane_
 
 
 
-void return_vector3_RHS(dim3 dimGrid, dim3 dimBlock, dim3 dimGrid_C, dim3 dimBlock_C, real dx, real dy, real dz, real Re, int Nx, int Ny, int Nz, int Mz, cudaComplex *ux_hat_d_plane, cudaComplex *uy_hat_d_plane, cudaComplex *uz_hat_d_plane,  cudaComplex *fx_hat_d, cudaComplex *fy_hat_d, cudaComplex *fz_hat_d, cudaComplex *Qx_hat_d, cudaComplex *Qy_hat_d, cudaComplex *Qz_hat_d, cudaComplex *div_hat_d, real* kx_nabla_d, real* ky_nabla_d, real *kz_nabla_d, real *din_diffusion_d, real *din_poisson_d, real *AM_11_d, real *AM_22_d, real *AM_33_d,  real *AM_12_d, real *AM_13_d, real *AM_23_d, cudaComplex *RHSx_hat_d, cudaComplex *RHSy_hat_d, cudaComplex *RHSz_hat_d, real *RHSx_d, real *RHSy_d, real *RHSz_d, int j_fixed, int k_fixed, int l_fixed, real *rhs_x, real *rhs_y, real *rhs_z){
+void return_vector3_RHS(dim3 dimGrid, dim3 dimBlock, dim3 dimGrid_C, dim3 dimBlock_C, real dx, real dy, real dz, real Re, int Nx, int Ny, int Nz, int Mz, cudaComplex *ux_hat_d, cudaComplex *uy_hat_d, cudaComplex *uz_hat_d,  cudaComplex *fx_hat_d, cudaComplex *fy_hat_d, cudaComplex *fz_hat_d, cudaComplex *Qx_hat_d, cudaComplex *Qy_hat_d, cudaComplex *Qz_hat_d, cudaComplex *div_hat_d, real* kx_nabla_d, real* ky_nabla_d, real *kz_nabla_d, real *din_diffusion_d, real *din_poisson_d, real *AM_11_d, real *AM_22_d, real *AM_33_d,  real *AM_12_d, real *AM_13_d, real *AM_23_d, cudaComplex *RHSx_hat_d, cudaComplex *RHSy_hat_d, cudaComplex *RHSz_hat_d, real *RHSx_d, real *RHSy_d, real *RHSz_d, real *RHSx, real *RHSy, real *RHSz, int j_fixed, int k_fixed, int l_fixed, real *rhs_x, real *rhs_y, real *rhs_z){
 
 
-    return_RHS(dimGrid, dimBlock, dimGrid_C, dimBlock_C,  dx,  dy,  dz,  Re,  Nx,  Ny,  Nz,  Mz, ux_hat_d_plane, uy_hat_d_plane, uz_hat_d_plane, fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d,  ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d,  AM_12_d, AM_13_d, AM_23_d, RHSx_hat_d, RHSy_hat_d, RHSz_hat_d);
+    return_RHS(dimGrid, dimBlock, dimGrid_C, dimBlock_C,  dx,  dy,  dz,  Re,  Nx,  Ny,  Nz,  Mz, ux_hat_d, uy_hat_d, uz_hat_d, fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d,  ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d,  AM_12_d, AM_13_d, AM_23_d, RHSx_hat_d, RHSy_hat_d, RHSz_hat_d);
 
     iFFTN_Device(RHSx_hat_d, RHSx_d);
     iFFTN_Device(RHSy_hat_d, RHSy_d);
@@ -297,10 +299,22 @@ void return_vector3_RHS(dim3 dimGrid, dim3 dimBlock, dim3 dimGrid_C, dim3 dimBlo
     host_device_real_cpy(RHSy, RHSy_d, Nx, Ny, Nz);
     host_device_real_cpy(RHSz, RHSz_d, Nx, Ny, Nz );
 
-    return_physical_vector3(Nx, Ny, Nz, RHSx, RHSy, RHSz, rhs_x, rhs_y, rhs_z, j_fixed,  k_fixed, l_fixed);
+    return_physical_vector3(Nx, Ny, Nz, RHSx, RHSy, RHSz, rhs_x, rhs_y, rhs_z, j_fixed, k_fixed, l_fixed);
 
 }
 
+void return_vector3_solution(int j_fixed,  int k_fixed, int l_fixed, dim3 dimGrid, dim3 dimBlock, int Nx, int Ny, int Nz, cudaComplex *ux_hat_d, cudaComplex *uy_hat_d, cudaComplex *uz_hat_d, real *ux_d, real *uy_d, real *uz_d, real *ux, real *uy, real *uz, real *point_x, real *point_y, real *point_z)
+{
+
+    velocity_to_double(dimGrid, dimBlock, Nx, Ny, Nz, ux_hat_d, ux_d, uy_hat_d, uy_d, uz_hat_d, uz_d);
+    
+    host_device_real_cpy(ux, ux_d, Nx, Ny, Nz);
+    host_device_real_cpy(uy, uy_d, Nx, Ny, Nz);
+    host_device_real_cpy(uz, uz_d, Nx, Ny, Nz);
+
+    return_physical_vector3(Nx, Ny, Nz, ux, uy, uz, point_x, point_y, point_z, j_fixed,  k_fixed, l_fixed);
+
+}
 
 void single_forward_step(dim3 dimGrid, dim3 dimBlock, dim3 dimGrid_C, dim3 dimBlock_C, real dx, real dy, real dz, real dt, real Re, int Nx, int Ny, int Nz, int Mz, cudaComplex *ux_hat_d_plane, cudaComplex *uy_hat_d_plane, cudaComplex *uz_hat_d_plane, cudaComplex *ux_hat_d_1, cudaComplex *uy_hat_d_1, cudaComplex *uz_hat_d_1,  cudaComplex *ux_hat_d_2, cudaComplex *uy_hat_d_2, cudaComplex *uz_hat_d_2,  cudaComplex *ux_hat_d_3, cudaComplex *uy_hat_d_3, cudaComplex *uz_hat_d_3,  cudaComplex *fx_hat_d, cudaComplex *fy_hat_d, cudaComplex *fz_hat_d, cudaComplex *Qx_hat_d, cudaComplex *Qy_hat_d, cudaComplex *Qz_hat_d, cudaComplex *div_hat_d, real* kx_nabla_d, real* ky_nabla_d, real *kz_nabla_d, real *din_diffusion_d, real *din_poisson_d, real *AM_11_d, real *AM_22_d, real *AM_33_d,  real *AM_12_d, real *AM_13_d, real *AM_23_d, real *ux_d_plane, real *uy_d_plane, real *uz_d_plane,  real *ux_plane, real *uy_plane, real *uz_plane, int j_fixed, int k_fixed, int l_fixed, real *point_x, real *point_y, real *point_z){
 
@@ -371,7 +385,7 @@ bool find_intersection(real x_0, real y_0, real z_0, real *x_next, real x_prev, 
 
             //ux_hat_d_plane, uy_hat_d_plane, uz_hat_d_plane
 
-            construct_physical_vector(dimGrid, dimBlock, Nx, Ny, Nz, j_fixed, k_fixed, l_fixed,  xn1, yn1, zn1, ux_d_plane, uy_d_plane, uz_d_plane, ux_hat_d_plane, uy_hat_d_plane, uz_hat_d_plane);
+            //construct_physical_vector(dimGrid, dimBlock, Nx, Ny, Nz, j_fixed, k_fixed, l_fixed,  xn1, yn1, zn1, ux_d_plane, uy_d_plane, uz_d_plane, ux_hat_d_plane, uy_hat_d_plane, uz_hat_d_plane);
 
             single_forward_step(dimGrid, dimBlock, dimGrid_C, dimBlock_C,  dx, dy, dz, /*!*/dt1 /*!*/, Re,  Nx,  Ny,  Nz,  Mz, ux_hat_d_plane, uy_hat_d_plane, uz_hat_d_plane, ux_hat_d_1, uy_hat_d_1, uz_hat_d_1,  ux_hat_d_2, uy_hat_d_2, uz_hat_d_2,  ux_hat_d_3, uy_hat_d_3, uz_hat_d_3,  fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d, ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d,  AM_12_d, AM_13_d, AM_23_d, ux_d_plane, uy_d_plane, uz_d_plane,  ux_plane, uy_plane, uz_plane, j_fixed, k_fixed, l_fixed, xn1, yn1, zn1);
 
@@ -390,17 +404,127 @@ bool find_intersection(real x_0, real y_0, real z_0, real *x_next, real x_prev, 
 
 
 
-
-
-
-void execute_return_map()
+void execute_return_map(real x_0, real y_0, real z_0, real *x_next, real x_prev, real *y_next, real y_prev, real *z_next, real z_prev, real rhs_x, real rhs_y, real rhs_z, int j_fixed, int k_fixed, int l_fixed, dim3 dimGrid, dim3 dimBlock, dim3 dimGrid_C, dim3 dimBlock_C, real dx, real dy, real dz, real dt, real Re, int Nx, int Ny, int Nz, int Mz, cudaComplex *ux_hat_d_plane, cudaComplex *uy_hat_d_plane, cudaComplex *uz_hat_d_plane, cudaComplex *ux_hat_d_1, cudaComplex *uy_hat_d_1, cudaComplex *uz_hat_d_1,  cudaComplex *ux_hat_d_2, cudaComplex *uy_hat_d_2, cudaComplex *uz_hat_d_2,  cudaComplex *ux_hat_d_3, cudaComplex *uy_hat_d_3, cudaComplex *uz_hat_d_3,  cudaComplex *fx_hat_d, cudaComplex *fy_hat_d, cudaComplex *fz_hat_d, cudaComplex *Qx_hat_d, cudaComplex *Qy_hat_d, cudaComplex *Qz_hat_d, cudaComplex *div_hat_d, real* kx_nabla_d, real* ky_nabla_d, real *kz_nabla_d, real *din_diffusion_d, real *din_poisson_d, real *AM_11_d, real *AM_22_d, real *AM_33_d,  real *AM_12_d, real *AM_13_d, real *AM_23_d, real *ux_d_plane, real *uy_d_plane, real *uz_d_plane,  real *ux_plane, real *uy_plane, real *uz_plane)
 {
 
+    int Nrad=30, Nphi=30;
+    int number_of_points=Nrad*Nphi;
+    real x0, y0, z0;
+    real rhs_x, rhs_y, rhs_z;
+
+    real *x_loc, *y_loc, *z_loc, *p_x, *p_y, *p_z, *Matrix;
+    real *v_x, *v_y, *v_z;
+    real *vx_loc, *vy_loc;
+    allocate_real(Nrad, Nphi, 1, 11, &x_loc, &y_loc, &z_loc, &p_x, &p_y, &p_z, &v_x, &v_y, &v_z, &vx_loc, &vy_loc);
+    Matrix=allocate_d(3,3,1);
+    
+    real *ux, *uy, *uz;
+    allocate_real(Nx, Ny, Nz, 3, &ux, &uy, &uz);
+
+    cudaComplex *ux_hat_d_plane, *uy_hat_d_plane, *uz_hat_d_plane;
+    real *ux_d_plane, *uy_d_plane, *uz_d_plane;
 
 
+    device_allocate_all_complex(Nx, Ny, Mz, 3, &ux_hat_d_plane, &uy_hat_d_plane, &uz_hat_d_plane);
+    device_allocate_all_real(Nx, Ny, Nz, 3, &ux_d_plane, &uy_d_plane, &uz_d_plane);
 
 
+    //obtaining the RHS vector at a currect solution point
+    return_vector3_RHS(dimGrid,  dimBlock,  dimGrid_C, dimBlock_C, dx, dy, dz, Re, Nx, Ny,  Nz, Mz, ux_hat_d, uy_hat_d, uz_hat_d,  fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d,  ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d, AM_12_d, AM_13_d, AM_23_d, ux_hat_d_plane, uy_hat_d_plane, uz_hat_d_plane, ux_d_plane, uy_d_plane, uz_d_plane, ux, uy, uz, j_fixed,  k_fixed, l_fixed, rhs_x, rhs_y, rhs_z);
+
+    //get a point of x0,y0,z0 from the solution
+    return_vector3_solution(j_fixed,  k_fixed, l_fixed, dimGrid, dimBlock, Nx, Ny, Nz, ux_hat_d, uy_hat_d, uz_hat_d, ux_d_plane, uy_d_plane, uz_d_plane, ux, uy, uz, x_0, y_0, z_0);
 
 
+    real radius=0.001;
+    int size=Nrad*Nphi;
+ 
+    construct_plane_rectangular(Nrad, Nphi, x_loc, y_loc, z_loc, radius, 0.0, 0.0, 0.0);
+
+
+    rotate_plane(rhs_x, rhs_y, rhs_z, 0.0, 0.0, 1.0, Matrix, size, x_loc, y_loc, z_loc, p_x, p_y, p_z);
+    translate_plane(x0, y0, z0, size, p_x, p_y, p_z);
+
+
+    real tvec_x=p_x[0]-p_x[Nphi*Nrad-3];
+    real tvec_y=p_y[0]-p_y[Nphi*Nrad-3];
+    real tvec_z=p_z[0]-p_z[Nphi*Nrad-3];
+    
+    real ivec_x=x_loc[0]-x_loc[Nphi*Nrad-3];
+    real ivec_y=y_loc[0]-y_loc[Nphi*Nrad-3];
+    real ivec_z=z_loc[0]-z_loc[Nphi*Nrad-3];
+
+    printf("\n[%lf %lf %lf]->([%lf %lf %lf],[%lf %lf %lf]) plane test=%le\n", ivec_x, ivec_y, ivec_z, tvec_x, tvec_y, tvec_z, rhs_x, rhs_y, rhs_z, vector3_dot_product(rhs_x, rhs_y, rhs_z,tvec_x, tvec_y, tvec_z) );
+
+
+    debug_plot_points("res_3D_0.dat", size, x_loc, y_loc, z_loc);
+    debug_plot_points("res_3D.dat", size, p_x, p_y, p_z);
+    double scale=0.75*radius;
+    debug_plot_vector("normal.dat", x0, y0, z0, rhs_x, rhs_y, rhs_z, scale);
+    
+
+    bool stop_flag=false
+    int steps=0;
+    real x_next=0.0, y_next=0.0, z_next=0.0;
+    for (int j = 0; j < number_of_points; ++j){
+        x_prev=p_x[j];
+        y_prev=p_y[j];
+        z_prev=p_z[j];
+
+
+        construct_physical_vector(dimGrid, dimBlock, Nx, Ny, Nz, j_fixed, k_fixed, l_fixed,  x_prev, y_prev, z_prev, /* original solution */ ux_hat_d, uy_hat_d, uz_hat_d,/* ends */ ux_d_plane, uy_d_plane, uz_d_plane, ux_hat_d_plane, uy_hat_d_plane, uz_hat_d_plane);
+
+        while(!stop_flag){
+            stop_flag = find_intersection(x_0, y_0, z_0, x_next, real x_prev, y_next, y_prev, z_next, z_prev, real rhs_x, real rhs_y, real rhs_z, j_fixed, k_fixed, l_fixed, dimGrid, dimBlock, dimGrid_C, dimBlock_C, dx, dy, dz, dt, Re, Nx, Ny, Nz, Mz, ux_hat_d_plane, uy_hat_d_plane, uz_hat_d_plane, ux_hat_d_1, uy_hat_d_1, uz_hat_d_1,  ux_hat_d_2, uy_hat_d_2, uz_hat_d_2,  ux_hat_d_3, uy_hat_d_3, uz_hat_d_3,  fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d,  kx_nabla_d,  ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d,  AM_12_d, AM_13_d, AM_23_d, ux_d_plane, uy_d_plane, uz_d_plane,  ux_plane, uy_plane, uz_plane); 
+
+            x_prev=x_next;
+            y_prev=y_next;
+            z_prev=z_next;
+
+            printf("[ %i ]   \r", steps);
+            steps++;
+            
+        }
+        p_x[j]=x_next;
+        p_y[j]=y_next;
+        p_z[j]=z_next;
+
+    
+    }
+    
+
+
+    debug_plot_points("res_3D_1.dat", size, p_x, p_y, p_z);
+
+    
+    double test_vec_x0=0.0,test_vec_y0=0.0,test_vec_z0=1.0;
+    double test_vec_x,test_vec_y,test_vec_z;
+    rotate_plane(rhs_x, rhs_y, rhs_z, 0, 0, 1.0, Matrix, 1, &test_vec_x0, &test_vec_y0, &test_vec_z0, &test_vec_x, &test_vec_y, &test_vec_z);
+    
+    //translate_plane(x0, y0, z0, 1, &test_vec_x, &test_vec_y, &test_vec_z);
+    debug_plot_vector("normal_1.dat", x0, y0, z0, test_vec_x, test_vec_y, test_vec_z, scale);
+
+    debug_plot_vectors("vectors.dat", size, p_x, p_y, p_z, v_x, v_y, v_z, scale);
+
+    device_deallocate_all_complex(3, ux_hat_d_plane, uy_hat_d_plane, uz_hat_d_plane);
+    device_deallocate_all_real(3, ux_d_plane, uy_d_plane, uz_d_plane);
+
+    free(ux);
+    free(uy);
+    free(uz);
+
+    free(x_loc);
+    free(y_loc);
+    free(p_x);
+    free(p_y);
+    free(p_z);
+    free(Matrix);   
+    free(vx_loc);
+    free(vy_loc);
+    free(v_x);
+    free(v_y);
+    free(v_z);  
 
 }
+
+
