@@ -3,7 +3,8 @@
 
 //==========================================FILE=OPERATIONS====================================================
 
-void debug_plot_points_2D(char f_name[], int Nx, int Ny, double *vals_x, double *vals_y){
+void debug_plot_points_2D(char f_name[], int Nx, int Ny, double *vals_x, double *vals_y)
+{
     FILE *stream;
     stream=fopen(f_name,"w");
 
@@ -20,7 +21,8 @@ void debug_plot_points_2D(char f_name[], int Nx, int Ny, double *vals_x, double 
 }
 
 
-void debug_plot_points_3D(char f_name[], int Nx, int Ny, int Nz, double *vals_x, double *vals_y, double *vals_z){
+void debug_plot_points_3D(char f_name[], int Nx, int Ny, int Nz, double *vals_x, double *vals_y, double *vals_z)
+{
     FILE *stream;
     stream=fopen(f_name,"w");
 
@@ -36,7 +38,8 @@ void debug_plot_points_3D(char f_name[], int Nx, int Ny, int Nz, double *vals_x,
     fclose(stream);
 }
 
-void debug_plot_points(char f_name[], int size, double *vals_x, double *vals_y, double *vals_z){
+void debug_plot_points(char f_name[], int size, double *vals_x, double *vals_y, double *vals_z)
+{
     FILE *stream;
     stream=fopen(f_name,"w");
 
@@ -47,7 +50,8 @@ void debug_plot_points(char f_name[], int size, double *vals_x, double *vals_y, 
     fclose(stream);
 }
 
-void debug_plot_vector(char f_name[], double x0, double y0, double z0, double dx1, double dy1, double dz1, double scale){
+void debug_plot_vector(char f_name[], double x0, double y0, double z0, double dx1, double dy1, double dz1, double scale)
+{
     FILE *stream;
     stream=fopen(f_name,"w");
 
@@ -66,7 +70,8 @@ void debug_plot_vector(char f_name[], double x0, double y0, double z0, double dx
 
 
 
-void debug_plot_vectors(char f_name[], int size, double *xp, double *yp, double *zp, double *vals_x, double *vals_y, double *vals_z, double scale){
+void debug_plot_vectors(char f_name[], int size, double *xp, double *yp, double *zp, double *vals_x, double *vals_y, double *vals_z, double scale)
+{
     FILE *stream;
     stream=fopen(f_name,"w");
 
@@ -81,15 +86,33 @@ void debug_plot_vectors(char f_name[], int size, double *xp, double *yp, double 
 //==========================================FILE=OPERATIONS====================================================
 
 
-inline __device__ construct_physical_vector_device(int Nx, int Ny, int Nz, int j_fixed, int k_fixed, int l_fixed, real x1, real x2, real x3, real *ux_d, real *uy_d, real *uz_d)
+
+__global__ void construct_physical_vector_device(int Nx, int Ny, int Nz, int j_fixed, int k_fixed, int l_fixed,  real x_point, real y_point, real z_point, real *ux_d, real *uy_d, real *uz_d)
 {
-    ux_d[IN(j_fixed,k_fixed,l_fixed)]=x1;
-    uy_d[IN(j_fixed,k_fixed,l_fixed)]=x2;
-    uz_d[IN(j_fixed,k_fixed,l_fixed)]=x3;
+
+
+    ux_d[IN(j_fixed, k_fixed, l_fixed)]=x_point;
+    uy_d[IN(j_fixed, k_fixed, l_fixed)]=y_point;
+    uz_d[IN(j_fixed, k_fixed, l_fixed)]=z_point;
+
+
 }
 
 
-void return_physical_vector3(int Nx, int Ny, int Nz, real *ux, real *uy, real *uz, real *v3x, real *v3y, real *v3z, int j_fixed, int k_fixed, int l_fixed){
+void construct_physical_vector(dim3 dimGrid, dim3 dimBlock, int Nx, int Ny, int Nz, int j_fixed, int k_fixed, int l_fixed,  real x_point, real y_point, real z_point, real *ux_d_plane, real *uy_d_plane, real *uz_d_plane, cudaComplex *ux_hat_d_plane, cudaComplex *uy_hat_d_plane, cudaComplex *uz_hat_d_plane)
+{
+
+    construct_physical_vector_device<<<dimGrid, dimBlock>>>(Nx, Ny, Nz, j_fixed, k_fixed, l_fixed,  x_point, y_point, z_point, ux_d_plane , uy_d_plane, uz_d_plane);
+
+    Image_to_Domain(dimGrid, dimBlock, Nx, Ny, Nz, ux_d_plane, ux_hat_d_plane, uy_d_plane, uy_hat_d_plane, uz_d_plane, uz_hat_d_plane);
+
+
+}
+
+
+
+void return_physical_vector3(int Nx, int Ny, int Nz, real *ux, real *uy, real *uz, real *v3x, real *v3y, real *v3z, int j_fixed, int k_fixed, int l_fixed)
+{
 
     v3x[0]=ux[IN(j_fixed,k_fixed,l_fixed)];
     v3y[0]=uy[IN(j_fixed,k_fixed,l_fixed)];
@@ -100,7 +123,9 @@ void return_physical_vector3(int Nx, int Ny, int Nz, real *ux, real *uy, real *u
 
 
 
-void construct_plane_rectangular(int local_Nx, int local_Ny, real *local_x, real *local_y, real *local_z, real eps){
+
+void construct_plane_rectangular(int local_Nx, int local_Ny, real *local_x, real *local_y, real *local_z, real eps)
+{
 
     int Nx=local_Nx;
     int Ny=local_Ny;
@@ -227,6 +252,14 @@ void translate_plane(real x0, real y0, real z0, int size, real *p_x, real *p_y, 
 
 }
 
+real test_plane_location(real nx, real ny, real nz, real x0, real y0, real z0, real x, real y, real z){
+
+    real vx=(x-x0);
+    real vy=(y-y0);
+    real vz=(z-z0);
+
+    return(vector3_dot_product(nx, ny, nz, vx, vy, vz));
+}
 
 
 void rotate_plane(real rhs_x, real rhs_y, real rhs_z, real plane_nx, real plane_ny, real plane_nz, real *Matrix, int size, real *plane_x, real *plane_y, real *plane_z, real *p_x, real *p_y, real *p_z){
@@ -284,11 +317,81 @@ void single_forward_step(dim3 dimGrid, dim3 dimBlock, dim3 dimGrid_C, dim3 dimBl
 
 }
 
+
+
+
 //0 select a point in the plane 
 //1 call single_forward_step.
 //2 If the condition of the interseciton is met, then we find the intersection point and store the result, else, goto 1.
 //3 take next point in the plane
 //4 goto 1.
+
+bool find_intersection(real x_0, real y_0, real z_0, real *x_next, real x_prev, real *y_next, real y_prev, real *z_next, real z_prev, real rhs_x, real rhs_y, real rhs_z, int j_fixed, int k_fixed, int l_fixed, dim3 dimGrid, dim3 dimBlock, dim3 dimGrid_C, dim3 dimBlock_C, real dx, real dy, real dz, real dt, real Re, int Nx, int Ny, int Nz, int Mz, cudaComplex *ux_hat_d_plane, cudaComplex *uy_hat_d_plane, cudaComplex *uz_hat_d_plane, cudaComplex *ux_hat_d_1, cudaComplex *uy_hat_d_1, cudaComplex *uz_hat_d_1,  cudaComplex *ux_hat_d_2, cudaComplex *uy_hat_d_2, cudaComplex *uz_hat_d_2,  cudaComplex *ux_hat_d_3, cudaComplex *uy_hat_d_3, cudaComplex *uz_hat_d_3,  cudaComplex *fx_hat_d, cudaComplex *fy_hat_d, cudaComplex *fz_hat_d, cudaComplex *Qx_hat_d, cudaComplex *Qy_hat_d, cudaComplex *Qz_hat_d, cudaComplex *div_hat_d, real* kx_nabla_d, real* ky_nabla_d, real *kz_nabla_d, real *din_diffusion_d, real *din_poisson_d, real *AM_11_d, real *AM_22_d, real *AM_33_d,  real *AM_12_d, real *AM_13_d, real *AM_23_d, real *ux_d_plane, real *uy_d_plane, real *uz_d_plane,  real *ux_plane, real *uy_plane, real *uz_plane)
+{
+
+    const real rho=1.0e-4;
+    bool return_flag=false;
+
+    single_forward_step(dimGrid, dimBlock, dimGrid_C, dimBlock_C, dx, dy, dz, dt, Re, Nx, Ny, Nz, Mz, ux_hat_d_plane, uy_hat_d_plane, uz_hat_d_plane, ux_hat_d_1, uy_hat_d_1, uz_hat_d_1,  ux_hat_d_2, uy_hat_d_2, uz_hat_d_2, ux_hat_d_3, uy_hat_d_3, uz_hat_d_3, fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d, ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d, AM_12_d, AM_13_d, AM_23_d, ux_d_plane, uy_d_plane, uz_d_plane, ux_plane, uy_plane, uz_plane, j_fixed, k_fixed, l_fixed, x_next, y_next, z_next);
+
+    real test_vec_x=x_next-x_prev, test_vec_y=y_next-y_prev, test_vec_z=z_next-z_prev;
+
+    //crosses plane
+    real sign_1=test_plane_location(rhs_x, rhs_y, rhs_z, x_0, y_0, z_0, x_prev, y_prev, z_prev);
+    real sign_2=test_plane_location(rhs_x, rhs_y, rhs_z, x_0, y_0, z_0, x_next, y_next, z_next); 
+    
+    //in the same direction
+    real sign_3=vector3_dot_product(rhs_x, rhs_y, rhs_z, test_vec_x, test_vec_y, test_vec_z); 
+    
+    real vec_x=xp-x0;
+    real vec_y=yp-y0;
+    real vec_z=zp-z0;
+     //in the ball_rho
+    real vec_norm=vector3_norm(vec_x, vec_y, vec_z);
+
+    //if(vec_norm<1.0e-3){
+    //    printf("\n %le", vec_norm);
+    //}
+
+    if((vec_norm<rho)&&(sign_1*sign_2<0.0)&&(sign_3>0.0)){
+        real xn1=x_prev, yn1=y_prev, zn1=z_prev;
+        real err=std::fabs(test_plane_location(rhs_x, rhs_y, rhs_z, x_0, y_0, z_0, x_next, y_next, z_next));
+        real del=std::fabs(test_plane_location(rhs_x, rhs_y, rhs_z, x_0, y_0, z_0, x_prev, y_prev, z_prev));
+        real dt1=dt;
+        int iter=0;
+        //printf("%i ", j);
+        //real xn2=0.0, yn2=0.0, zn2=0.0;
+        while((err>1.0e-8)&&(iter<2500)){                        
+            iter++;
+            //real err1=err;
+            xn1=x_prev; yn1=y_prev; zn1=z_prev;
+            dt1=dt1*(del)/(del+err);
+            //RK_3_SSP(dh1, 0.0, &xn1, &yn1, &zn1, mu, eps);
+            
+
+            //ux_hat_d_plane, uy_hat_d_plane, uz_hat_d_plane
+
+            construct_physical_vector(dimGrid, dimBlock, Nx, Ny, Nz, j_fixed, k_fixed, l_fixed,  xn1, yn1, zn1, ux_d_plane, uy_d_plane, uz_d_plane, ux_hat_d_plane, uy_hat_d_plane, uz_hat_d_plane);
+
+            single_forward_step(dimGrid, dimBlock, dimGrid_C, dimBlock_C,  dx, dy, dz, /*!*/dt1 /*!*/, Re,  Nx,  Ny,  Nz,  Mz, ux_hat_d_plane, uy_hat_d_plane, uz_hat_d_plane, ux_hat_d_1, uy_hat_d_1, uz_hat_d_1,  ux_hat_d_2, uy_hat_d_2, uz_hat_d_2,  ux_hat_d_3, uy_hat_d_3, uz_hat_d_3,  fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d, ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d,  AM_12_d, AM_13_d, AM_23_d, ux_d_plane, uy_d_plane, uz_d_plane,  ux_plane, uy_plane, uz_plane, j_fixed, k_fixed, l_fixed, xn1, yn1, zn1);
+
+
+            err=std::fabs(test_plane_location(rhs_x, rhs_y, rhs_z, x0, y0, z0, xn1, yn1, zn1));
+            //if(err1<err)
+            //    break;
+            //xn2=xn1; yn2=yn1; zn2=zn1;
+        }
+        x_next=xn1; y_next=yn1; z_next=zn1;
+        return_flag=true;
+    }
+
+    return return_flag;
+}
+
+
+
+
+
 
 void execute_return_map()
 {
