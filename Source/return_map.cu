@@ -3,9 +3,6 @@
 
 //==========================================FILE=OPERATIONS====================================================
 
-
-
-
 void debug_plot_points_2D(char f_name[], int Nx, int Ny, double *vals_x, double *vals_y){
     FILE *stream;
     stream=fopen(f_name,"w");
@@ -84,11 +81,21 @@ void debug_plot_vectors(char f_name[], int size, double *xp, double *yp, double 
 //==========================================FILE=OPERATIONS====================================================
 
 
-inline __device__ construct_physical_vector(int Nx, int Ny, int Nz, int j_fixed, int k_fixed, int l_fixed, real x1, real x2, real x3, real *ux_d, real *uy_d, real *uz_d)
+inline __device__ construct_physical_vector_device(int Nx, int Ny, int Nz, int j_fixed, int k_fixed, int l_fixed, real x1, real x2, real x3, real *ux_d, real *uy_d, real *uz_d)
 {
     ux_d[IN(j_fixed,k_fixed,l_fixed)]=x1;
     uy_d[IN(j_fixed,k_fixed,l_fixed)]=x2;
     uz_d[IN(j_fixed,k_fixed,l_fixed)]=x3;
+}
+
+
+void return_physical_vector3(int Nx, int Ny, int Nz, real *ux, real *uy, real *uz, real *v3x, real *v3y, real *v3z, int j_fixed, int k_fixed, int l_fixed){
+
+    v3x[0]=ux[IN(j_fixed,k_fixed,l_fixed)];
+    v3y[0]=uy[IN(j_fixed,k_fixed,l_fixed)];
+    v3z[0]=uz[IN(j_fixed,k_fixed,l_fixed)];
+
+
 }
 
 
@@ -243,6 +250,45 @@ void rotate_plane(real rhs_x, real rhs_y, real rhs_z, real plane_nx, real plane_
 }
 
 
+
+void return_vector3_RHS(dim3 dimGrid, dim3 dimBlock, dim3 dimGrid_C, dim3 dimBlock_C, real dx, real dy, real dz, real Re, int Nx, int Ny, int Nz, int Mz, cudaComplex *ux_hat_d_plane, cudaComplex *uy_hat_d_plane, cudaComplex *uz_hat_d_plane,  cudaComplex *fx_hat_d, cudaComplex *fy_hat_d, cudaComplex *fz_hat_d, cudaComplex *Qx_hat_d, cudaComplex *Qy_hat_d, cudaComplex *Qz_hat_d, cudaComplex *div_hat_d, real* kx_nabla_d, real* ky_nabla_d, real *kz_nabla_d, real *din_diffusion_d, real *din_poisson_d, real *AM_11_d, real *AM_22_d, real *AM_33_d,  real *AM_12_d, real *AM_13_d, real *AM_23_d, cudaComplex *RHSx_hat_d, cudaComplex *RHSy_hat_d, cudaComplex *RHSz_hat_d, real *RHSx_d, real *RHSy_d, real *RHSz_d, int j_fixed, int k_fixed, int l_fixed, real *rhs_x, real *rhs_y, real *rhs_z){
+
+
+    return_RHS(dimGrid, dimBlock, dimGrid_C, dimBlock_C,  dx,  dy,  dz,  Re,  Nx,  Ny,  Nz,  Mz, ux_hat_d_plane, uy_hat_d_plane, uz_hat_d_plane, fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d,  ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d,  AM_12_d, AM_13_d, AM_23_d, RHSx_hat_d, RHSy_hat_d, RHSz_hat_d);
+
+    iFFTN_Device(RHSx_hat_d, RHSx_d);
+    iFFTN_Device(RHSy_hat_d, RHSy_d);
+    iFFTN_Device(RHSz_hat_d, RHSz_d);
+
+    host_device_real_cpy(RHSx, RHSx_d, Nx, Ny, Nz);
+    host_device_real_cpy(RHSy, RHSy_d, Nx, Ny, Nz);
+    host_device_real_cpy(RHSz, RHSz_d, Nx, Ny, Nz );
+
+    return_physical_vector3(Nx, Ny, Nz, RHSx, RHSy, RHSz, rhs_x, rhs_y, rhs_z, j_fixed,  k_fixed, l_fixed);
+
+}
+
+
+void single_forward_step(dim3 dimGrid, dim3 dimBlock, dim3 dimGrid_C, dim3 dimBlock_C, real dx, real dy, real dz, real dt, real Re, int Nx, int Ny, int Nz, int Mz, cudaComplex *ux_hat_d_plane, cudaComplex *uy_hat_d_plane, cudaComplex *uz_hat_d_plane, cudaComplex *ux_hat_d_1, cudaComplex *uy_hat_d_1, cudaComplex *uz_hat_d_1,  cudaComplex *ux_hat_d_2, cudaComplex *uy_hat_d_2, cudaComplex *uz_hat_d_2,  cudaComplex *ux_hat_d_3, cudaComplex *uy_hat_d_3, cudaComplex *uz_hat_d_3,  cudaComplex *fx_hat_d, cudaComplex *fy_hat_d, cudaComplex *fz_hat_d, cudaComplex *Qx_hat_d, cudaComplex *Qy_hat_d, cudaComplex *Qz_hat_d, cudaComplex *div_hat_d, real* kx_nabla_d, real* ky_nabla_d, real *kz_nabla_d, real *din_diffusion_d, real *din_poisson_d, real *AM_11_d, real *AM_22_d, real *AM_33_d,  real *AM_12_d, real *AM_13_d, real *AM_23_d, real *ux_d_plane, real *uy_d_plane, real *uz_d_plane,  real *ux_plane, real *uy_plane, real *uz_plane, int j_fixed, int k_fixed, int l_fixed, real *point_x, real *point_y, real *point_z){
+
+
+    RK3_SSP(dimGrid, dimBlock, dimGrid_C, dimBlock_C, dx, dy, dz, dt, Re, Nx, Ny, Nz, Mz, ux_hat_d_plane, uy_hat_d_plane, uz_hat_d_plane,  ux_hat_d_1, uy_hat_d_1, uz_hat_d_1,  ux_hat_d_2, uy_hat_d_2, uz_hat_d_2,  ux_hat_d_3, uy_hat_d_3, uz_hat_d_3,  fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d,  kx_nabla_d,  ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d,  AM_12_d, AM_13_d, AM_23_d);
+
+    velocity_to_double(dimGrid, dimBlock, Nx, Ny, Nz, ux_hat_d_plane, ux_d_plane, uy_hat_d_plane, uy_d_plane, uz_hat_d_plane, uz_d_plane);
+    
+    host_device_real_cpy(ux_plane, ux_d_plane, Nx, Ny, Nz);
+    host_device_real_cpy(uy_plane, uy_d_plane, Nx, Ny, Nz);
+    host_device_real_cpy(uz_plane, uz_d_plane, Nx, Ny, Nz);
+
+    return_physical_vector3(Nx, Ny, Nz, ux_plane, uy_plane, uz_plane, point_x, point_y, point_z, j_fixed,  k_fixed, l_fixed);
+
+}
+
+//0 select a point in the plane 
+//1 call single_forward_step.
+//2 If the condition of the interseciton is met, then we find the intersection point and store the result, else, goto 1.
+//3 take next point in the plane
+//4 goto 1.
 
 void execute_return_map()
 {

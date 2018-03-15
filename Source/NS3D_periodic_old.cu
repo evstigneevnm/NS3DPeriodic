@@ -339,23 +339,30 @@ void NSCallMatrixVector(struct_NS3D_RK3_Call *SC, double * vec_f_in, double * ve
 void NSCallMatrixVector_reduced(struct_NS3D_RK3_Call *SC, double * vec_f_in, double * vec_f_out){
 
 
+<<<<<<< HEAD
     int N_Arnoldi=(SC->Nx)*(SC->Ny)*(SC->Mz);
     dim3 threads(BLOCKSIZE);
     int blocks_x=(N_Arnoldi+BLOCKSIZE)/BLOCKSIZE;
     dim3 blocks(blocks_x);
-    //real one_over_tau=1.0/(SC->tau);
+    real one_over_tau=1.0/(SC->tau);
+=======
+	int N_Arnoldi=(SC->Nx)*(SC->Ny)*(SC->Mz);
+	dim3 threads(BLOCKSIZE);
+	int blocks_x=(N_Arnoldi+BLOCKSIZE)/BLOCKSIZE;
+	dim3 blocks(blocks_x);
+	//real one_over_tau=1.0/(SC->tau);
 
-    velocities_from_A_vector_reduced_kernel<<< blocks, threads>>>(N_Arnoldi, vec_f_in, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d);
-    
-    
-    //returns application of Jacobi matrix on a vector in v*, linearized arround u*.
-    RK3_SSP_UV_RHS(SC->dimGrid, SC->dimBlock, SC->dimGrid_C, SC->dimBlock_C, SC->dx, SC->dy, SC->dz, SC->dt, SC->Re, SC->Nx, SC->Ny, SC->Nz, SC->Mz, SC->ux_hat_d, SC->uy_hat_d, SC->uz_hat_d,  SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d, SC->ux_hat_d_1, SC->uy_hat_d_1, SC->uz_hat_d_1,  SC->ux_hat_d_2, SC->uy_hat_d_2, SC->uz_hat_d_2,  SC->ux_hat_d_3, SC->uy_hat_d_3, SC->uz_hat_d_3,  SC->fx_hat_d, SC->fy_hat_d, SC->fz_hat_d, SC->Qx_hat_d, SC->Qy_hat_d, SC->Qz_hat_d, SC->div_hat_d, SC->kx_nabla_d,  SC->ky_nabla_d, SC->kz_nabla_d, SC->din_diffusion_d, SC->din_poisson_d, SC->AM_11_d, SC->AM_22_d, SC->AM_33_d,  SC->AM_12_d, SC->AM_13_d, SC->AM_23_d);
-    
+	velocities_from_A_vector_reduced_kernel<<< blocks, threads>>>(N_Arnoldi, vec_f_in, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d);
+	
+	
+	//returns application of Jacobi matrix on a vector in v*, linearized arround u*.
+	RK3_SSP_UV_RHS(SC->dimGrid, SC->dimBlock, SC->dimGrid_C, SC->dimBlock_C, SC->dx, SC->dy, SC->dz, SC->dt, SC->Re, SC->Nx, SC->Ny, SC->Nz, SC->Mz, SC->ux_hat_d, SC->uy_hat_d, SC->uz_hat_d,  SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d, SC->ux_hat_d_1, SC->uy_hat_d_1, SC->uz_hat_d_1,  SC->ux_hat_d_2, SC->uy_hat_d_2, SC->uz_hat_d_2,  SC->ux_hat_d_3, SC->uy_hat_d_3, SC->uz_hat_d_3,  SC->fx_hat_d, SC->fy_hat_d, SC->fz_hat_d, SC->Qx_hat_d, SC->Qy_hat_d, SC->Qz_hat_d, SC->div_hat_d, SC->kx_nabla_d,  SC->ky_nabla_d, SC->kz_nabla_d, SC->din_diffusion_d, SC->din_poisson_d, SC->AM_11_d, SC->AM_22_d, SC->AM_33_d,  SC->AM_12_d, SC->AM_13_d, SC->AM_23_d);
+	
 
 
-    A_vector_from_velocities_reduced_kernel<<< blocks, threads>>>(N_Arnoldi, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d, vec_f_out);
-    
-    //A_vector_add_diagonal_kernel<<< blocks, threads>>>(N_Arnoldi, vec_f_in, one_over_tau, vec_f_out);
+	A_vector_from_velocities_reduced_kernel<<< blocks, threads>>>(N_Arnoldi, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d, vec_f_out);
+	
+	//A_vector_add_diagonal_kernel<<< blocks, threads>>>(N_Arnoldi, vec_f_in, one_over_tau, vec_f_out);
 
 }
 
@@ -363,11 +370,12 @@ void NSCallMatrixVector_reduced(struct_NS3D_RK3_Call *SC, double * vec_f_in, dou
 void NSCallMatrixVector_reduced_Newton_Globalization(struct_NS3D_RK3_Call *SC, double * vec_f_in, double * vec_f_out){
 
 
-    int N_Arnoldi=(SC->Nx)*(SC->Ny)*(SC->Mz);
-    dim3 threads(BLOCKSIZE);
-    int blocks_x=(N_Arnoldi+BLOCKSIZE)/BLOCKSIZE;
-    dim3 blocks(blocks_x);
-    real one_over_tau=1.0/(SC->tau);
+	int N_Arnoldi=(SC->Nx)*(SC->Ny)*(SC->Mz);
+	dim3 threads(BLOCKSIZE);
+	int blocks_x=(N_Arnoldi+BLOCKSIZE)/BLOCKSIZE;
+	dim3 blocks(blocks_x);
+	real one_over_tau=1.0/(SC->tau);
+>>>>>>> 6cf398df61772f1daf29eab7ebb7e4398e2f32a9
 
     velocities_from_A_vector_reduced_kernel<<< blocks, threads>>>(N_Arnoldi, vec_f_in, SC->vx_hat_d, SC->vy_hat_d, SC->vz_hat_d);
     
@@ -601,7 +609,7 @@ void Axb_rotated_exponent_invert(struct_NS3D_RK3_iExp_Call *SC_exponential, real
 
 
 
-    int res_flag=BiCGStabL(handle, L, 6*N-6, (user_map_vector) NSCallMatrixVector_exponential_rotated_reduced, (struct_NS3D_RK3_iExp_Call*) SC_exponential, vec_f_out, vec_f_in, tol, Iter, false, 1); //true->false; 10->ommit!
+    int res_flag=BiCGStabL(handle, L, 6*N-6, (user_map_vector)NSCallMatrixVector_exponential_rotated_reduced, (struct_NS3D_RK3_iExp_Call*) SC_exponential, vec_f_out, vec_f_in, tol, Iter, false, 1); //true->false; 10->ommit!
     switch (res_flag){
         case 0: //timer_print();
                 //printf("converged with: %le, and %i iterations\n", tol[0], Iter[0]);
@@ -1363,7 +1371,7 @@ int main (int argc, char *argv[])
         host_device_real_cpy(&rot_z_loc, &(rot_z_d[IN(Nx/2-4,Ny/2-3,Nz/2-2)]), 1, 1, 1);
         
         TotalTime+=dt;
-        fprintf( stream, "%e    %e  %e  %e  %e  %e  %e  %e ", TotalTime, ux_loc, uy_loc, uz_loc, rot_x_loc, rot_y_loc, rot_z_loc, energy);  //1 2 3 4 5 6 7 8
+        fprintf( stream, "%e %e %e %e %e %e %e %e ", TotalTime, ux_loc, uy_loc, uz_loc, rot_x_loc, rot_y_loc, rot_z_loc, energy);  //1 2 3 4 5 6 7 8
 
         host_device_real_cpy(&ux_loc, &(ux_d[IN(Nx/3,Ny/3,Nz/3)]), 1, 1, 1);
         host_device_real_cpy(&uy_loc, &(uy_d[IN(Nx/3,Ny/3,Nz/3)]), 1, 1, 1);
@@ -1374,7 +1382,7 @@ int main (int argc, char *argv[])
         host_device_real_cpy(&rot_y_loc, &(rot_y_d[IN(Nx/3,Ny/3,Nz/3)]), 1, 1, 1);
         host_device_real_cpy(&rot_z_loc, &(rot_z_d[IN(Nx/3,Ny/3,Nz/3)]), 1, 1, 1);   
         
-        fprintf( stream, "%e    %e  %e  %e  %e  %e  %e ", ux_loc, uy_loc, uz_loc, rot_x_loc, rot_y_loc, rot_z_loc, dissipation);    // 9 10 11 12 13 14 15
+        fprintf( stream, "%e %e %e %e %e %e %e ", ux_loc, uy_loc, uz_loc, rot_x_loc, rot_y_loc, rot_z_loc, dissipation);    // 9 10 11 12 13 14 15
 
     //high or low wavenumber analysis
     //  get_high_wavenumbers(dimGrid,  dimBlock, dimGrid_C,  dimBlock_C, Nx, Ny, Nz, Mz, ux_hat_d, uy_hat_d, uz_hat_d, ux_red_hat_d, uy_red_hat_d, uz_red_hat_d, u_temp_complex_d, ux_red_d, uy_red_d, uz_red_d, 1);
@@ -1388,7 +1396,7 @@ int main (int argc, char *argv[])
         host_device_real_cpy(&rot_y_loc, &(rot_y_d[IN(Nx/8,Ny/8,Nz/8)]), 1, 1, 1);
         host_device_real_cpy(&rot_z_loc, &(rot_z_d[IN(Nx/8,Ny/8,Nz/8)]), 1, 1, 1); 
 
-        fprintf( stream, "%e    %e  %e  %e  %e  %e  %e ", ux_loc, uy_loc, uz_loc, rot_x_loc, rot_y_loc, rot_z_loc, (energy-dissipation/Re)); //16 17 18 19 20 21 22 
+        fprintf( stream, "%e %e %e %e %e %e %e ", ux_loc, uy_loc, uz_loc, rot_x_loc, rot_y_loc, rot_z_loc, (energy-dissipation/Re)); //16 17 18 19 20 21 22 
 
 
 
@@ -1404,7 +1412,7 @@ int main (int argc, char *argv[])
         host_device_real_cpy(&rot_y_loc, &(rot_y_d[IN(Nx/3,Ny/3,Nz/3)]), 1, 1, 1);
         host_device_real_cpy(&rot_z_loc, &(rot_z_d[IN(Nx/3,Ny/3,Nz/3)]), 1, 1, 1); 
 
-        fprintf( stream, "%e    %e  %e  %e  %e  %e  %e ", ux_loc, uy_loc,  uz_loc, rot_x_loc, rot_y_loc, rot_z_loc, energy); //23 24 25 26 27 28 29
+        fprintf( stream, "%e %e %e %e %e %e %e ", ux_loc, uy_loc,  uz_loc, rot_x_loc, rot_y_loc, rot_z_loc, energy); //23 24 25 26 27 28 29
         
 //Fourier hormonics from here on
         int local_Nz=Nz;
@@ -1420,7 +1428,7 @@ int main (int argc, char *argv[])
         host_device_real_cpy(&rot_z_loc, &(uz_Im_d[IN(Nx-6,Ny-6,Nz-6)]), 1, 1, 1);
         host_device_real_cpy(&div_loc, &(div_pos_d[IN(Nx-6,Ny-6,Nz-6)]), 1, 1, 1);
 
-        fprintf( stream, "%e    %e  %e  %e  %e  %e  %e ", ux_loc, rot_x_loc, uy_loc, rot_y_loc, uz_loc, rot_z_loc, dissipation); //30 31 32 33 34 35 36
+        fprintf( stream, "%e %e %e %e %e %e %e ", ux_loc, rot_x_loc, uy_loc, rot_y_loc, uz_loc, rot_z_loc, dissipation); //30 31 32 33 34 35 36
 
         host_device_real_cpy(&ux_loc, &(ux_Im_d[IN(Nx/5,Ny/4-3,Nz/4-1)]), 1, 1, 1);
         host_device_real_cpy(&rot_x_loc, &(ux_Im_d[IN(Nx/5,Ny/5,Nz/5)]), 1, 1, 1);
@@ -1430,7 +1438,7 @@ int main (int argc, char *argv[])
         host_device_real_cpy(&rot_z_loc, &(uz_Im_d[IN(Nx/5,Ny/5,Nz/5)]), 1, 1, 1);
         host_device_real_cpy(&div_loc, &(ux_Im_d[IN(2,2,2)]), 1, 1, 1);
 
-        fprintf( stream, "%e    %e  %e  %e  %e  %e  %e ", ux_loc, rot_x_loc, uy_loc, rot_y_loc, uz_loc, rot_z_loc, div_loc); //37 38 39 40 41 42 43
+        fprintf( stream, "%e %e %e %e %e %e %e ", ux_loc, rot_x_loc, uy_loc, rot_y_loc, uz_loc, rot_z_loc, div_loc); //37 38 39 40 41 42 43
 
         host_device_real_cpy(&ux_loc, &(ux_Im_d[IN(0,0,0)]), 1, 1, 1); //44
         host_device_real_cpy(&rot_x_loc, &(ux_Im_d[IN(1,0,0)]), 1, 1, 1); //45
@@ -1440,7 +1448,7 @@ int main (int argc, char *argv[])
         host_device_real_cpy(&rot_z_loc, &(ux_Im_d[IN(Nx-1,Ny-1,0)]), 1, 1, 1); //49
         host_device_real_cpy(&div_loc, &(ux_Im_d[IN(Nx-1,Ny-1,Nz-1)]), 1, 1, 1); //50
 
-        fprintf( stream, "%e    %e  %e  %e  %e  %e  %e\n", ux_loc, rot_x_loc, uy_loc, rot_y_loc, uz_loc, rot_z_loc, div_loc); //44 45 46 47 48 49 50
+        fprintf( stream, "%e %e %e %e %e %e %e\n", ux_loc, rot_x_loc, uy_loc, rot_y_loc, uz_loc, rot_z_loc, div_loc); //44 45 46 47 48 49 50
         Nz=local_Nz;
 
         //Add random perturbation during execution
@@ -1469,7 +1477,7 @@ int main (int argc, char *argv[])
         //lame file operation ends here.
 
         if(t%217==0)
-            printf("run:---[%.03f\%]---dt=%.03e---U=%.03e---\r",(t+1)/(1.0*timesteps)*100.0,dt,ux_loc);     
+            printf("run:---[%.03f\%]---dt=%.03e---U=%.03e---\r", (t+1)/(1.0*timesteps)*100.0, dt, ux_loc);     
         
 
         //Shapiro test case
@@ -1484,12 +1492,18 @@ int main (int argc, char *argv[])
     
     free(Sh_ret);
 
+
+    
+
+    
+
     if (cudaDeviceSynchronize() != cudaSuccess){
         fprintf(stderr, "Cuda error: Failed to synchronize\n");
     }   
     real etime=((end.tv_sec-start.tv_sec)*1000000u+(end.tv_usec-start.tv_usec))/1.0E6;
     printf("\n\nWall time:%fsec\n",etime);  
 //performing EIGS!
+<<<<<<< HEAD
     cudaComplex *vx_hat_d, *vy_hat_d, *vz_hat_d, *vx_hat_d_1, *vy_hat_d_1, *vz_hat_d_1;
 
     device_allocate_all_complex(Nx, Ny, Mz, 6, &vx_hat_d, &vy_hat_d, &vz_hat_d, &vx_hat_d_1, &vy_hat_d_1, &vz_hat_d_1);
@@ -1621,11 +1635,11 @@ int main (int argc, char *argv[])
     NS3D_Call_iExp->AM_12_d=AM_12_d;
     NS3D_Call_iExp->AM_13_d=AM_13_d;
     NS3D_Call_iExp->AM_23_d=AM_23_d;
-    NS3D_Call_iExp->Timesteps_period=3;//3478;
+    NS3D_Call_iExp->Timesteps_period=10;//3478;
 
     //init BICGStab(L) properties
-    NS3D_Call_iExp->shift_real=1.05;
-    NS3D_Call_iExp->rotate_angle=0.05;
+    NS3D_Call_iExp->shift_real=1.01;
+    NS3D_Call_iExp->rotate_angle=0.01;
     NS3D_Call_iExp->BiCG_L=6;
     NS3D_Call_iExp->BiCG_tol=1.0e-9;
     NS3D_Call_iExp->BiCG_Iter=N_Arnoldi;
@@ -1650,7 +1664,7 @@ int main (int argc, char *argv[])
 
     
 
-//  Newton(handle, (user_map_vector) NSCallMatrixVector_reduced_Newton_Globalization, (struct_NS3D_RK3_Call *) NS3D_Call,  (user_map_vector) NSCallRHS_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, N_Arnoldi-3, Newton_x_d, tol_newton, iter_newton, 5.0e-7, 2500, true, 1);
+//  Newton(handle, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call,  (user_map_vector) NSCallRHS_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, N_Arnoldi-3, Newton_x_d, tol_newton, iter_newton, 5.0e-7, 2500, true, 1);
 
 //  velocities_from_A_vector_reduced_kernel<<< blocks, threads>>>(N_Arnoldi/3, Newton_x_d, ux_hat_d, uy_hat_d, uz_hat_d);
 
@@ -1663,7 +1677,7 @@ int main (int argc, char *argv[])
     //call Arnoldi method with linearised function
     char what[]="LR";
     int IRA_iterations=3000;
-    double IRA_tol=5.0e-8;
+    double IRA_tol=1.0e-9;
 
 
 
@@ -1709,6 +1723,227 @@ int main (int argc, char *argv[])
         int N_point=Nx*Ny*Mz;
         //velocities_from_A_vector(N_point, N_point, &eigvs_real[ll*N_Arnoldi], vx_hat_d, vy_hat_d, vz_hat_d);
         velocities_from_A_vector_reduced(N_point, N_point, &eigvs_real[ll*(N_Arnoldi-3)], vx_hat_d, vy_hat_d, vz_hat_d);
+=======
+	cudaComplex *vx_hat_d, *vy_hat_d, *vz_hat_d, *vx_hat_d_1, *vy_hat_d_1, *vz_hat_d_1;
+
+	device_allocate_all_complex(Nx, Ny, Mz, 6, &vx_hat_d, &vy_hat_d, &vz_hat_d, &vx_hat_d_1, &vy_hat_d_1, &vz_hat_d_1);
+
+	struct_NS3D_RK3_Call *NS3D_Call = new struct_NS3D_RK3_Call[1];
+
+	NS3D_Call->dimGrid=dimGrid;
+	NS3D_Call->dimBlock=dimBlock;
+	NS3D_Call->dimGrid_C=dimGrid_C;
+	NS3D_Call->dimBlock_C=dimBlock_C;
+	NS3D_Call->dx=dx;
+	NS3D_Call->dy=dy; 
+	NS3D_Call->dz=dz;
+	NS3D_Call->dt=dt;
+	NS3D_Call->Re=Re;
+	NS3D_Call->Nx=Nx;
+	NS3D_Call->Ny=Ny;
+	NS3D_Call->Nz=Nz;
+	NS3D_Call->Mz=Mz;
+	NS3D_Call->ux_hat_d=ux_hat_d;
+	NS3D_Call->uy_hat_d=uy_hat_d;
+	NS3D_Call->uz_hat_d=uz_hat_d;
+	NS3D_Call->vx_hat_d=vx_hat_d;
+	NS3D_Call->vy_hat_d=vy_hat_d;
+	NS3D_Call->vz_hat_d=vz_hat_d;
+	NS3D_Call->ux_hat_d_1=ux_hat_d_1;
+	NS3D_Call->uy_hat_d_1=uy_hat_d_1;
+	NS3D_Call->uz_hat_d_1=uz_hat_d_1;
+	NS3D_Call->vx_hat_d_1=vx_hat_d_1;
+	NS3D_Call->vy_hat_d_1=vy_hat_d_1;
+	NS3D_Call->vz_hat_d_1=vz_hat_d_1;
+	NS3D_Call->ux_hat_d_2=ux_hat_d_2;
+	NS3D_Call->uy_hat_d_2=uy_hat_d_2;
+	NS3D_Call->uz_hat_d_2=uz_hat_d_2;
+	NS3D_Call->ux_hat_d_3=ux_hat_d_3;
+	NS3D_Call->uy_hat_d_3=uy_hat_d_3;
+	NS3D_Call->uz_hat_d_3=uz_hat_d_3;
+	NS3D_Call->fx_hat_d=fx_hat_d;
+	NS3D_Call->fy_hat_d=fy_hat_d;
+	NS3D_Call->fz_hat_d=fz_hat_d;
+	NS3D_Call->Qx_hat_d=Qx_hat_d;
+	NS3D_Call->Qy_hat_d=Qy_hat_d;
+	NS3D_Call->Qz_hat_d=Qz_hat_d;
+	NS3D_Call->div_hat_d=div_hat_d;
+	NS3D_Call->kx_nabla_d=kx_nabla_d;
+	NS3D_Call->ky_nabla_d=ky_nabla_d;
+	NS3D_Call->kz_nabla_d=kz_nabla_d;
+	NS3D_Call->din_diffusion_d=din_diffusion_d;
+	NS3D_Call->din_poisson_d=din_poisson_d;
+	NS3D_Call->AM_11_d=AM_11_d;
+	NS3D_Call->AM_22_d=AM_22_d;
+	NS3D_Call->AM_33_d=AM_33_d;
+	NS3D_Call->AM_12_d=AM_12_d;
+	NS3D_Call->AM_13_d=AM_13_d;
+	NS3D_Call->AM_23_d=AM_23_d;
+	//for periodic and quasiperiodic problems!
+	//NS3D_Call->Timesteps_period=1;
+	NS3D_Call->Timesteps_period=Timesteps_period;//3478;
+	NS3D_Call->tau=5.0E0;// ''timestep'' for Newton's method
+
+
+
+	int N_Arnoldi=3*Nx*Ny*Mz;
+
+
+	real res_tol=1;
+	//int k_A=6, m_A=3; //initialized at the start of main from parameters or from default k_A=6, m_A=3.
+	int m=m_A*k_A;
+	double complex *eigenvaluesA=new double complex[m];
+	real *eigvs_real, *eigvs_imag;
+
+	device_allocate_all_real(N_Arnoldi-3, k_A, 1, 2, &eigvs_real, &eigvs_imag);
+
+
+	cublasHandle_t handle;		//init cublas
+	cublasStatus_t ret;
+	ret = cublasCreate(&handle);
+	Arnoldi::checkError(ret, " cublasCreate(). ");
+
+	//check invert Exponent structure init
+	struct_NS3D_RK3_iExp_Call *NS3D_Call_iExp = new struct_NS3D_RK3_iExp_Call[1];
+
+	NS3D_Call_iExp->dimGrid=dimGrid;
+	NS3D_Call_iExp->dimBlock=dimBlock;
+	NS3D_Call_iExp->dimGrid_C=dimGrid_C;
+	NS3D_Call_iExp->dimBlock_C=dimBlock_C;
+	NS3D_Call_iExp->dx=dx;
+	NS3D_Call_iExp->dy=dy; 
+	NS3D_Call_iExp->dz=dz;
+	NS3D_Call_iExp->dt=dt;
+	NS3D_Call_iExp->Re=Re;
+	NS3D_Call_iExp->Nx=Nx;
+	NS3D_Call_iExp->Ny=Ny;
+	NS3D_Call_iExp->Nz=Nz;
+	NS3D_Call_iExp->Mz=Mz;
+	NS3D_Call_iExp->ux_hat_d=ux_hat_d;
+	NS3D_Call_iExp->uy_hat_d=uy_hat_d;
+	NS3D_Call_iExp->uz_hat_d=uz_hat_d;
+	NS3D_Call_iExp->vx_hat_d=vx_hat_d;
+	NS3D_Call_iExp->vy_hat_d=vy_hat_d;
+	NS3D_Call_iExp->vz_hat_d=vz_hat_d;
+	NS3D_Call_iExp->ux_hat_d_1=ux_hat_d_1;
+	NS3D_Call_iExp->uy_hat_d_1=uy_hat_d_1;
+	NS3D_Call_iExp->uz_hat_d_1=uz_hat_d_1;
+	NS3D_Call_iExp->vx_hat_d_1=vx_hat_d_1;
+	NS3D_Call_iExp->vy_hat_d_1=vy_hat_d_1;
+	NS3D_Call_iExp->vz_hat_d_1=vz_hat_d_1;
+	NS3D_Call_iExp->ux_hat_d_2=ux_hat_d_2;
+	NS3D_Call_iExp->uy_hat_d_2=uy_hat_d_2;
+	NS3D_Call_iExp->uz_hat_d_2=uz_hat_d_2;
+	NS3D_Call_iExp->ux_hat_d_3=ux_hat_d_3;
+	NS3D_Call_iExp->uy_hat_d_3=uy_hat_d_3;
+	NS3D_Call_iExp->uz_hat_d_3=uz_hat_d_3;
+	NS3D_Call_iExp->fx_hat_d=fx_hat_d;
+	NS3D_Call_iExp->fy_hat_d=fy_hat_d;
+	NS3D_Call_iExp->fz_hat_d=fz_hat_d;
+	NS3D_Call_iExp->Qx_hat_d=Qx_hat_d;
+	NS3D_Call_iExp->Qy_hat_d=Qy_hat_d;
+	NS3D_Call_iExp->Qz_hat_d=Qz_hat_d;
+	NS3D_Call_iExp->div_hat_d=div_hat_d;
+	NS3D_Call_iExp->kx_nabla_d=kx_nabla_d;
+	NS3D_Call_iExp->ky_nabla_d=ky_nabla_d;
+	NS3D_Call_iExp->kz_nabla_d=kz_nabla_d;
+	NS3D_Call_iExp->din_diffusion_d=din_diffusion_d;
+	NS3D_Call_iExp->din_poisson_d=din_poisson_d;
+	NS3D_Call_iExp->AM_11_d=AM_11_d;
+	NS3D_Call_iExp->AM_22_d=AM_22_d;
+	NS3D_Call_iExp->AM_33_d=AM_33_d;
+	NS3D_Call_iExp->AM_12_d=AM_12_d;
+	NS3D_Call_iExp->AM_13_d=AM_13_d;
+	NS3D_Call_iExp->AM_23_d=AM_23_d;
+	NS3D_Call_iExp->Timesteps_period=3;//3478;
+
+	//init BICGStab(L) properties
+	NS3D_Call_iExp->shift_real=1.05;
+	NS3D_Call_iExp->rotate_angle=0.05;
+	NS3D_Call_iExp->BiCG_L=6;
+	NS3D_Call_iExp->BiCG_tol=1.0e-9;
+	NS3D_Call_iExp->BiCG_Iter=N_Arnoldi;
+	NS3D_Call_iExp->handle=handle;
+
+
+	int *iter_newton=new int[1];
+	real *tol_newton=new real[1];
+	iter_newton[0]=1000;
+	tol_newton[0]=5.0e-7;
+	//test Newton!!!
+	real *Newton_x_initial_d, *Newton_x_d;
+	device_allocate_all_real(N_Arnoldi-3, 1, 1, 2, &Newton_x_initial_d, &Newton_x_d);
+
+	//init x_initial
+	int N_array=(Nx)*(Ny)*(Mz);
+	dim3 threads(BLOCKSIZE);
+	int blocks_x=(N_Arnoldi+BLOCKSIZE)/BLOCKSIZE;
+	dim3 blocks(blocks_x);
+	A_vector_from_velocities_reduced_kernel<<< blocks, threads>>>(N_Arnoldi/3, ux_hat_d, uy_hat_d, uz_hat_d, Newton_x_d);
+//	Arnoldi::set_initial_Krylov_vector_value_GPU(N_Arnoldi, Newton_x_d);
+
+	
+
+//	Newton(handle, (user_map_vector) NSCallMatrixVector_reduced_Newton_Globalization, (struct_NS3D_RK3_Call *) NS3D_Call,  (user_map_vector) NSCallRHS_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, N_Arnoldi-3, Newton_x_d, tol_newton, iter_newton, 5.0e-7, 2500, true, 1);
+
+//	velocities_from_A_vector_reduced_kernel<<< blocks, threads>>>(N_Arnoldi/3, Newton_x_d, ux_hat_d, uy_hat_d, uz_hat_d);
+
+	device_deallocate_all_real(2, Newton_x_initial_d, Newton_x_d);
+	delete [] tol_newton, iter_newton;
+
+	//test Newton ends
+
+
+	//call Arnoldi method with linearised function
+	char what[]="LR";
+	int IRA_iterations=3000;
+	double IRA_tol=5.0e-8;
+
+
+
+	printf("\nArnoldi starts\n");
+	if(Timesteps_period==0){
+		printf("\nSkipping IRA! \n");
+	}
+	else if(Timesteps_period==1){
+		
+		//res_tol=Implicit_restart_Arnoldi_GPU_data(handle, true, N_Arnoldi-3, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call,  what, k_A, m, eigenvaluesA, IRA_tol, IRA_iterations,eigvs_real,eigvs_imag); //_exponential
+		
+		//for pure real shift
+		//res_tol=Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(handle, true, N_Arnoldi-3, (user_map_vector) Axb_exponent_invert, (struct_NS3D_RK3_iExp_Call *) NS3D_Call_iExp, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, "LR", "LM", k_A, m, eigenvaluesA, IRA_tol, IRA_iterations, eigvs_real,eigvs_imag);
+		
+		//Axb_rotated_exponent_invert
+
+		//res_tol=Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(handle, true, N_Arnoldi-3, (user_map_vector) Axb_exponent_invert, (struct_NS3D_RK3_iExp_Call *) NS3D_Call_iExp, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, "LR", "LM", k_A, m, eigenvaluesA, IRA_tol, IRA_iterations, false,  eigvs_real, eigvs_imag);
+
+		res_tol=Implicit_restart_Arnoldi_GPU_data_Matrix_Exponent(handle, true, N_Arnoldi-3, (user_map_vector) Axb_rotated_exponent_invert, (struct_NS3D_RK3_iExp_Call *) NS3D_Call_iExp, (user_map_vector) NSCallMatrixVector_reduced, (struct_NS3D_RK3_Call *) NS3D_Call, "LR", "LM", k_A, m, eigenvaluesA, IRA_tol, IRA_iterations, true,  eigvs_real, eigvs_imag);
+
+
+	}
+	else{
+		what[0]='L';
+		what[1]='M';
+		res_tol=Implicit_restart_Arnoldi_GPU_data(handle, true, N_Arnoldi-3, (user_map_vector) NSCallMatrixVector_exponential, (struct_NS3D_RK3_Call *) NS3D_Call,  what, k_A, m, eigenvaluesA, IRA_tol, IRA_iterations,eigvs_real,eigvs_imag); //_exponential		
+
+	}
+
+	
+
+
+
+	printf("\nArnoldi ends\n");
+	cublasDestroy(handle);
+
+	delete [] NS3D_Call_iExp;
+
+	//printing out eigenvectors in physical domain
+	
+//	if(DEBUG!=1)   //XXX! Debug in debug! Recursion.
+	for(int ll=0;ll<k_A;ll++){
+		int N_point=Nx*Ny*Mz;
+		//velocities_from_A_vector(N_point, N_point, &eigvs_real[ll*N_Arnoldi], vx_hat_d, vy_hat_d, vz_hat_d);
+		velocities_from_A_vector_reduced(N_point, N_point, &eigvs_real[ll*(N_Arnoldi-3)], vx_hat_d, vy_hat_d, vz_hat_d);
+>>>>>>> 6cf398df61772f1daf29eab7ebb7e4398e2f32a9
 
         velocity_to_double(dimGrid, dimBlock, Nx, Ny, Nz, vx_hat_d, ux_d, vy_hat_d, uy_d, vz_hat_d, uz_d);
         velocity_to_abs_device<<<dimGrid, dimBlock>>>(Nx, Ny, Nz, ux_d, uy_d, uz_d, u_abs_d);
