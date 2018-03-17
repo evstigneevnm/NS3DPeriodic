@@ -985,7 +985,8 @@ void CutOff_Fourier_Filter(dim3 dimGrid, dim3 dimBlock,  dim3 dimGrid_C, dim3 di
 }
 
 
-void Image_to_Domain(dim3 dimGrid, dim3 dimBlock, int Nx, int Ny, int Nz, real* ux_d, cudaComplex *ux_hat_d, real* uy_d, cudaComplex *uy_hat_d, real* uz_d, cudaComplex *uz_hat_d){
+void Image_to_Domain(dim3 dimGrid, dim3 dimBlock, int Nx, int Ny, int Nz, real* ux_d, cudaComplex *ux_hat_d, real* uy_d, cudaComplex *uy_hat_d, real* uz_d, cudaComplex *uz_hat_d)
+{
 
     iFFTN_Device(dimGrid, dimBlock, ux_hat_d, ux_d, Nx, Ny, Nz);
     iFFTN_Device(dimGrid, dimBlock, uy_hat_d, uy_d, Nx, Ny, Nz);
@@ -994,10 +995,11 @@ void Image_to_Domain(dim3 dimGrid, dim3 dimBlock, int Nx, int Ny, int Nz, real* 
 }
 
 
-void Domain_to_Image(dim3 dimGrid, dim3 dimBlock, int Nx, int Ny, int Nz, cudaComplex *ux_hat_d, real* ux_d, cudaComplex *uy_hat_d, real* uy_d, cudaComplex *uz_hat_d, real* uz_d){
+void Domain_to_Image(dim3 dimGrid, dim3 dimBlock, int Nx, int Ny, int Nz, cudaComplex *ux_hat_d, real* ux_d, cudaComplex *uy_hat_d, real* uy_d, cudaComplex *uz_hat_d, real* uz_d)
+{
 
-    FFTN_Device(dimGrid, dimBlock, ux_d, ux_hat_d);
-    FFTN_Device(dimGrid, dimBlock, uy_d, uy_hat_d);
-    FFTN_Device(dimGrid, dimBlock, uz_d, uz_hat_d);
+    FFTN_Device(ux_d, ux_hat_d);
+    FFTN_Device(uy_d, uy_hat_d);
+    FFTN_Device(uz_d, uz_hat_d);
 
 }
