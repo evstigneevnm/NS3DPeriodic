@@ -36,7 +36,7 @@ Arnoldi_file_operations:
 
 Arnoldi_memory_operations:
 	2>result_make.txt
-	/usr/local/cuda-9.1/bin/nvcc -g Source/Arnoldi/memory_operations.cu -o Obj/Arnoldi/Arnoldi_memory_operations.o -c 2>>result_make.txt
+	/usr/local/cuda-9.1/bin/nvcc -arch=sm_35 -m64 -g Source/Arnoldi/memory_operations.cu -o Obj/Arnoldi/Arnoldi_memory_operations.o -c 2>>result_make.txt
 
 Arnoldi_cuda_supp:
 	2>result_make.txt
@@ -62,7 +62,7 @@ Newton:
 
 
 Arnoldi_all:
-	make Arnoldi_LAPACKs Arnoldi_Products Arnoldi_Shifts Arnoldi_QRshifts Arnoldi_timer Arnoldi_Matrix_Vector_emulator Arnoldi_Arnoldi_Driver Arnoldi_file_operations Arnoldi_memory_operations Arnoldi_cuda_supp Arnoldi_Implicit_restart_Arnoldi BiCGstabL Newton
+	make Arnoldi_LAPACKs Arnoldi_Products Arnoldi_Shifts Arnoldi_QRshifts Arnoldi_timer Arnoldi_Matrix_Vector_emulator Arnoldi_Arnoldi_Driver Arnoldi_file_operations Arnoldi_memory_operations Arnoldi_cuda_supp Arnoldi_Implicit_restart_Arnoldi BiCGstabL
 
 
 Jacobian:
@@ -113,12 +113,10 @@ NS_deb:
 
 
 NS_all:
-	make Jacobian adv_2p3 adv_WENO supp math rkstep Shapiro return_map
+	make Jacobian adv_2p3 adv_WENO supp math rkstep Shapiro
 
 
 clear:
-	cd Obj/Arnoldi; \
-	rm *.o
 	cd Obj; \
 	rm *.o  
 	rm *.pos *.dat NS3D_periodic result_make.txt

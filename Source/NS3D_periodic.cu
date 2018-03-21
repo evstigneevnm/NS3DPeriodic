@@ -984,7 +984,7 @@ int main (int argc, char *argv[])
     if(!InitCUDA(GPU_Number)) {
         return 0;
     }
-    cudaDeviceReset();  
+//    cudaDeviceReset();  
 
 
 //  real dt=0.25*min2(min2(dx,dy),min2(dx,dz));
@@ -1485,7 +1485,7 @@ int main (int argc, char *argv[])
     printf("\n\nWall time:%fsec\n",etime);  
 //============  Return map  ============
 
-    execute_return_map(int(Nx/3.0), int(Ny/3.0), int(Nz/3.0), dimGrid, dimBlock, dimGrid_C, dimBlock_C, dx, dy, dz, dt, Re, Nx, Ny, Nz, Mz, ux_hat_d, uy_hat_d, uz_hat_d, ux_hat_d_1, uy_hat_d_1, uz_hat_d_1,  ux_hat_d_2, uy_hat_d_2, uz_hat_d_2,  ux_hat_d_3, uy_hat_d_3, uz_hat_d_3,  fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d, ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d, AM_12_d, AM_13_d, AM_23_d);
+  //  execute_return_map(int(Nx/3.0), int(Ny/3.0), int(Nz/3.0), dimGrid, dimBlock, dimGrid_C, dimBlock_C, dx, dy, dz, dt, Re, Nx, Ny, Nz, Mz, ux_hat_d, uy_hat_d, uz_hat_d, ux_hat_d_1, uy_hat_d_1, uz_hat_d_1,  ux_hat_d_2, uy_hat_d_2, uz_hat_d_2,  ux_hat_d_3, uy_hat_d_3, uz_hat_d_3,  fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d, ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d, AM_12_d, AM_13_d, AM_23_d);
 
 
 

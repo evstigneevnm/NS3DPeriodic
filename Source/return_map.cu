@@ -360,7 +360,7 @@ void construct_physical_vector(dim3 dimGrid, dim3 dimBlock, int Nx, int Ny, int 
 bool find_intersection(int steps, real x_0, real y_0, real z_0,  real *x_next, real x_prev, real *y_next, real y_prev, real *z_next, real z_prev, real rhs_x, real rhs_y, real rhs_z, int j_fixed, int k_fixed, int l_fixed, dim3 dimGrid, dim3 dimBlock, dim3 dimGrid_C, dim3 dimBlock_C, real dx, real dy, real dz, real dt, real Re, int Nx, int Ny, int Nz, int Mz, cudaComplex *ux_hat_d_plane, cudaComplex *uy_hat_d_plane, cudaComplex *uz_hat_d_plane, cudaComplex *ux_hat_d_plane_back, cudaComplex *uy_hat_d_plane_back, cudaComplex *uz_hat_d_plane_back, cudaComplex *ux_hat_d_1, cudaComplex *uy_hat_d_1, cudaComplex *uz_hat_d_1,  cudaComplex *ux_hat_d_2, cudaComplex *uy_hat_d_2, cudaComplex *uz_hat_d_2,  cudaComplex *ux_hat_d_3, cudaComplex *uy_hat_d_3, cudaComplex *uz_hat_d_3,  cudaComplex *fx_hat_d, cudaComplex *fy_hat_d, cudaComplex *fz_hat_d, cudaComplex *Qx_hat_d, cudaComplex *Qy_hat_d, cudaComplex *Qz_hat_d, cudaComplex *div_hat_d, real* kx_nabla_d, real* ky_nabla_d, real *kz_nabla_d, real *din_diffusion_d, real *din_poisson_d, real *AM_11_d, real *AM_22_d, real *AM_33_d,  real *AM_12_d, real *AM_13_d, real *AM_23_d, real *ux_d_plane, real *uy_d_plane, real *uz_d_plane,  real *ux_plane, real *uy_plane, real *uz_plane)
 {
 
-    const real rho=1.0e-1;
+    const real rho=5.0e-1;
     bool return_flag=false;
 
 
@@ -472,7 +472,7 @@ void execute_return_map(int j_fixed, int k_fixed, int l_fixed, dim3 dimGrid, dim
     =============================================
 */ 
     copy_arrays(dimGrid_C, dimBlock_C, Nx, Ny, Nz, ux_hat_d, uy_hat_d, uz_hat_d, ux_hat_d_shift, uy_hat_d_shift, uz_hat_d_shift); 
-    for(int t=0;t<100;t++){
+    for(int t=0;t<930;t++){
         RK3_SSP(dimGrid, dimBlock, dimGrid_C, dimBlock_C, dx, dy, dz, dt, Re, Nx, Ny, Nz, Mz, ux_hat_d_shift, uy_hat_d_shift, uz_hat_d_shift,  ux_hat_d_1, uy_hat_d_1, uz_hat_d_1,  ux_hat_d_2, uy_hat_d_2, uz_hat_d_2,  ux_hat_d_3, uy_hat_d_3, uz_hat_d_3,  fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d,  kx_nabla_d,  ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d,  AM_12_d, AM_13_d, AM_23_d);
     }
     real rhs_x_shift, rhs_y_shift, rhs_z_shift;
@@ -480,13 +480,14 @@ void execute_return_map(int j_fixed, int k_fixed, int l_fixed, dim3 dimGrid, dim
     return_vector3_solution(j_fixed,  k_fixed, l_fixed, dimGrid, dimBlock, Nx, Ny, Nz, ux_hat_d_shift, uy_hat_d_shift, uz_hat_d_shift, ux_d_plane, uy_d_plane, uz_d_plane, ux, uy, uz, &x_0_shift, &y_0_shift, &z_0_shift);
     return_vector3_RHS(dimGrid,  dimBlock,  dimGrid_C, dimBlock_C, dx, dy, dz, Re, Nx, Ny,  Nz, Mz, ux_hat_d_shift, uy_hat_d_shift, uz_hat_d_shift,  fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d,  ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d, AM_12_d, AM_13_d, AM_23_d, ux_hat_d_plane, uy_hat_d_plane, uz_hat_d_plane, ux_d_plane, uy_d_plane, uz_d_plane, ux, uy, uz, j_fixed,  k_fixed, l_fixed, &rhs_x_shift, &rhs_y_shift, &rhs_z_shift);
 
+    //copy_arrays(dimGrid_C, dimBlock_C, Nx, Ny, Nz, ux_hat_d_shift, uy_hat_d_shift, uz_hat_d_shift, ux_hat_d, uy_hat_d, uz_hat_d);
 /*
     =============================================
     ENDS
     =============================================
 */
 
-    real radius=0.005;
+    real radius=0.01; //0.000001;
     int size=Nrad*Nphi;
  
     construct_plane_rectangular(Nrad, Nphi, x_loc, y_loc, z_loc, radius);
@@ -529,7 +530,7 @@ void execute_return_map(int j_fixed, int k_fixed, int l_fixed, dim3 dimGrid, dim
         return_vector3_solution(j_fixed,  k_fixed, l_fixed, dimGrid, dimBlock, Nx, Ny, Nz, ux_hat_d_plane, uy_hat_d_plane, uz_hat_d_plane, ux_d_plane, uy_d_plane, uz_d_plane, ux, uy, uz, &x_next, &y_next, &z_next);
 
         if( (std::fabs(x_prev-x_next)>1.0E-10)||(std::fabs(y_prev-y_next)>1.0E-10)||(std::fabs(z_prev-z_next)>1.0E-10) ){
-            printf("\nWarning - non matching points at j=%i\n",j);
+            printf("\nWarning - non matching points at j=%i \n",j);
         }
 
         FILE *stream;
@@ -542,6 +543,8 @@ void execute_return_map(int j_fixed, int k_fixed, int l_fixed, dim3 dimGrid, dim
         int count_stop_flags=0;
         real x_0_subs=x_0_shift, y_0_subs=y_0_shift, z_0_subs=z_0_shift;
         real rhs_x_subs=rhs_x_shift, rhs_y_subs=rhs_y_shift, rhs_z_subs=rhs_z_shift;
+        //real x_0_subs=x_0, y_0_subs=y_0, z_0_subs=z_0;
+        //real rhs_x_subs=rhs_x, rhs_y_subs=rhs_y, rhs_z_subs=rhs_z;
 
         while(!stop_flag){
             
@@ -552,7 +555,7 @@ void execute_return_map(int j_fixed, int k_fixed, int l_fixed, dim3 dimGrid, dim
             y_prev=y_next;
             z_prev=z_next;
 
-            if(stop_flag){
+/*            if(stop_flag){
                 count_stop_flags++;
                 if(count_stop_flags==1){
                     stop_flag=false;
@@ -563,7 +566,7 @@ void execute_return_map(int j_fixed, int k_fixed, int l_fixed, dim3 dimGrid, dim
                     rhs_x_subs=rhs_x; rhs_y_subs=rhs_y; rhs_z_subs=rhs_z;
                 }
             }
-
+*/
 
 
 
@@ -573,9 +576,9 @@ void execute_return_map(int j_fixed, int k_fixed, int l_fixed, dim3 dimGrid, dim
         }
         fclose(stream);
         printf("\n");
-        //p_x[j]=x_next;
-        //p_y[j]=y_next;
-        //p_z[j]=z_next;
+        p_x[j]=x_next;
+        p_y[j]=y_next;
+        p_z[j]=z_next;
 
         //advance solution!!!
         copy_arrays(dimGrid_C, dimBlock_C, Nx, Ny, Nz, ux_hat_d_plane, uy_hat_d_plane, uz_hat_d_plane, ux_hat_d, uy_hat_d, uz_hat_d);    
