@@ -1332,11 +1332,10 @@ int main (int argc, char *argv[])
             write_drop_files_from_device(drop, (t+1), Nx, Ny, Nz, ux, uy, uz, u_abs, div_pos, dx, dy, dz, ux_d, uy_d, uz_d, u_abs_d, div_pos_d);
         
 
-
-
         //TODO: lame file operation =( Fix this in the future!
 
         get_curl(dimGrid, dimBlock, Nx, Ny, Nz, dx, dy, dz, ux_d, uy_d, uz_d, rot_x_d, rot_y_d, rot_z_d);
+
 
         real energy=get_kinetic_energy(dimGrid, dimBlock, Nx, Ny, Nz, dx, dy, dz, ux_d, uy_d, uz_d, energy_d, energy_out1_d, energy_out2_d);
 
