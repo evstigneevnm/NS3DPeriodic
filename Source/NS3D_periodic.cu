@@ -1346,14 +1346,14 @@ int main (int argc, char *argv[])
         dissipation=dissipation/(2.0*PI*2.0*PI*2.0*PI/alpha);
 
 
-        host_device_real_cpy(&ux_loc, &(ux_d[IN(Nx/2-4,Ny/2-3,Nz/2-2)]), 1, 1, 1);
-        host_device_real_cpy(&uy_loc, &(uy_d[IN(Nx/2-4,Ny/2-3,Nz/2-2)]), 1, 1, 1);
-        host_device_real_cpy(&uz_loc, &(uz_d[IN(Nx/2-4,Ny/2-3,Nz/2-2)]), 1, 1, 1);
-        host_device_real_cpy(&div_loc, &(div_pos_d[IN(Nx/2-4,Ny/2-3,Nz/2-2)]), 1, 1, 1);       
+        host_device_real_cpy(&ux_loc, &(ux_d[IN(0,0,0)]), 1, 1, 1); //Nx/2-4,Ny/2-3,Nz/2-2
+        host_device_real_cpy(&uy_loc, &(uy_d[IN(0,0,0)]), 1, 1, 1);
+        host_device_real_cpy(&uz_loc, &(uz_d[IN(0,0,0)]), 1, 1, 1);
+        host_device_real_cpy(&div_loc, &(div_pos_d[IN(0,0,0)]), 1, 1, 1);       
         
-        host_device_real_cpy(&rot_x_loc, &(rot_x_d[IN(Nx/2-4,Ny/2-3,Nz/2-2)]), 1, 1, 1);
-        host_device_real_cpy(&rot_y_loc, &(rot_y_d[IN(Nx/2-4,Ny/2-3,Nz/2-2)]), 1, 1, 1);
-        host_device_real_cpy(&rot_z_loc, &(rot_z_d[IN(Nx/2-4,Ny/2-3,Nz/2-2)]), 1, 1, 1);
+        host_device_real_cpy(&rot_x_loc, &(rot_x_d[IN(0,0,0)]), 1, 1, 1);
+        host_device_real_cpy(&rot_y_loc, &(rot_y_d[IN(0,0,0)]), 1, 1, 1);
+        host_device_real_cpy(&rot_z_loc, &(rot_z_d[IN(0,0,0)]), 1, 1, 1);
         
         TotalTime+=dt;
         fprintf( stream, "%e    %e  %e  %e  %e  %e  %e  %e ", TotalTime, ux_loc, uy_loc, uz_loc, rot_x_loc, rot_y_loc, rot_z_loc, energy);  //1 2 3 4 5 6 7 8
@@ -1486,7 +1486,13 @@ int main (int argc, char *argv[])
 
   //  execute_return_map(int(Nx/3.0), int(Ny/3.0), int(Nz/3.0), dimGrid, dimBlock, dimGrid_C, dimBlock_C, dx, dy, dz, dt, Re, Nx, Ny, Nz, Mz, ux_hat_d, uy_hat_d, uz_hat_d, ux_hat_d_1, uy_hat_d_1, uz_hat_d_1,  ux_hat_d_2, uy_hat_d_2, uz_hat_d_2,  ux_hat_d_3, uy_hat_d_3, uz_hat_d_3,  fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d, ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d, AM_12_d, AM_13_d, AM_23_d);
     
-    execute_sections(int(Nx/3.0), int(Ny/3.0), int(Nz/3.0), dimGrid, dimBlock, dimGrid_C, dimBlock_C, dx, dy, dz, dt, Re, Nx, Ny, Nz, Mz, ux_hat_d, uy_hat_d, uz_hat_d, ux_hat_d_1, uy_hat_d_1, uz_hat_d_1,  ux_hat_d_2, uy_hat_d_2, uz_hat_d_2,  ux_hat_d_3, uy_hat_d_3, uz_hat_d_3,  fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d, ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d, AM_12_d, AM_13_d, AM_23_d);
+   //execute_sections(int(Nx/3.0), int(Ny/3.0), int(Nz/3.0), dimGrid, dimBlock, dimGrid_C, dimBlock_C, dx, dy, dz, dt, Re, Nx, Ny, Nz, Mz, ux_hat_d, uy_hat_d, uz_hat_d, ux_hat_d_1, uy_hat_d_1, uz_hat_d_1,  ux_hat_d_2, uy_hat_d_2, uz_hat_d_2,  ux_hat_d_3, uy_hat_d_3, uz_hat_d_3,  fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d, ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d, AM_12_d, AM_13_d, AM_23_d);
+    
+    printf("\n========== executing return map ==============\n");
+
+    execute_loaded_data(int(Nx/3.0), int(Ny/3.0), int(Nz/3.0), dimGrid, dimBlock, dimGrid_C, dimBlock_C, dx, dy, dz, dt, Re, Nx, Ny, Nz, Mz, ux_hat_d, uy_hat_d, uz_hat_d, ux_hat_d_1, uy_hat_d_1, uz_hat_d_1,  ux_hat_d_2, uy_hat_d_2, uz_hat_d_2,  ux_hat_d_3, uy_hat_d_3, uz_hat_d_3,  fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d, ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d, AM_12_d, AM_13_d, AM_23_d);
+
+
 
 //============Return map ens============
 //performing EIGS!
