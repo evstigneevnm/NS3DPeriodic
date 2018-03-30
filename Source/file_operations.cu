@@ -77,11 +77,14 @@ int get_control_fourier_size(char *file_name, int Nx, int Ny, int Nz, int *Nx_fi
 		return -1;
 	}
 
-	while((Nx_guess<=Nx)&&(Ny_guess<=Ny)&&(Mz_guess<=Nz)){
+	//while((Nx_guess<=Nx)&&(Ny_guess<=Ny)&&(Mz_guess<=Nz)){
+	while(true){
 		Ny_guess+=2;
 		Nx_guess=ratio_xy*Ny_guess;
 		Nz_guess=ratio_zy*Ny_guess;	
 		Mz_guess=Nz_guess/2+1;	
+		printf(" Nx=%i, Ny=%i, Mz=%i\n",Nx_guess,Ny_guess,Mz_guess);
+
 
 		if((Nx_guess*Ny_guess*Mz_guess)==aa){
 			printf("\nread size: Nx=%i, Ny=%i, Mz=%i\n",Nx_guess,Ny_guess,Mz_guess);

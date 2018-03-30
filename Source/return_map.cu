@@ -902,13 +902,13 @@ void execute_sections(int j_fixed, int k_fixed, int l_fixed, dim3 dimGrid, dim3 
 
 
 
-void execute_loaded_data(int j_fixed, int k_fixed, int l_fixed, dim3 dimGrid, dim3 dimBlock, dim3 dimGrid_C, dim3 dimBlock_C, real dx, real dy, real dz, real dt, real Re, int Nx, int Ny, int Nz, int Mz, cudaComplex *ux_hat_d, cudaComplex *uy_hat_d, cudaComplex *uz_hat_d, cudaComplex *ux_hat_d_1, cudaComplex *uy_hat_d_1, cudaComplex *uz_hat_d_1,  cudaComplex *ux_hat_d_2, cudaComplex *uy_hat_d_2, cudaComplex *uz_hat_d_2,  cudaComplex *ux_hat_d_3, cudaComplex *uy_hat_d_3, cudaComplex *uz_hat_d_3,  cudaComplex *fx_hat_d, cudaComplex *fy_hat_d, cudaComplex *fz_hat_d, cudaComplex *Qx_hat_d, cudaComplex *Qy_hat_d, cudaComplex *Qz_hat_d, cudaComplex *div_hat_d, real* kx_nabla_d, real* ky_nabla_d, real *kz_nabla_d, real *din_diffusion_d, real *din_poisson_d, real *AM_11_d, real *AM_22_d, real *AM_33_d,  real *AM_12_d, real *AM_13_d, real *AM_23_d)
+void execute_loaded_data(unsigned int intersecitons, int j_fixed, int k_fixed, int l_fixed, dim3 dimGrid, dim3 dimBlock, dim3 dimGrid_C, dim3 dimBlock_C, real dx, real dy, real dz, real dt, real Re, int Nx, int Ny, int Nz, int Mz, cudaComplex *ux_hat_d, cudaComplex *uy_hat_d, cudaComplex *uz_hat_d, cudaComplex *ux_hat_d_1, cudaComplex *uy_hat_d_1, cudaComplex *uz_hat_d_1,  cudaComplex *ux_hat_d_2, cudaComplex *uy_hat_d_2, cudaComplex *uz_hat_d_2,  cudaComplex *ux_hat_d_3, cudaComplex *uy_hat_d_3, cudaComplex *uz_hat_d_3,  cudaComplex *fx_hat_d, cudaComplex *fy_hat_d, cudaComplex *fz_hat_d, cudaComplex *Qx_hat_d, cudaComplex *Qy_hat_d, cudaComplex *Qz_hat_d, cudaComplex *div_hat_d, real* kx_nabla_d, real* ky_nabla_d, real *kz_nabla_d, real *din_diffusion_d, real *din_poisson_d, real *AM_11_d, real *AM_22_d, real *AM_33_d,  real *AM_12_d, real *AM_13_d, real *AM_23_d)
 {
 
     real x_0, y_0, z_0;
     real rhs_x, rhs_y, rhs_z;
 
-    FILE *stream_in, *stream_out;
+    FILE *stream_in, *stream_out, *stream_rhs;
 
     stream_in=fopen("rhs_and_zero_point.dat", "r" );
     fscanf( stream_in, "%le %le %le", &rhs_x, &rhs_y, &rhs_z);
@@ -923,6 +923,8 @@ void execute_loaded_data(int j_fixed, int k_fixed, int l_fixed, dim3 dimGrid, di
     cudaComplex *ux_hat_d_plane_back, *uy_hat_d_plane_back, *uz_hat_d_plane_back;
     cudaComplex *ux_hat_d_shift, *uy_hat_d_shift, *uz_hat_d_shift;
     real *ux_d_plane, *uy_d_plane, *uz_d_plane;
+    real *RHSx_d, *RHSy_d, *RHSz_d;
+    real *RHSx, *RHSy, *RHSz;
     //arrays for section storage
     real *rot_x_d, *rot_y_d, *rot_z_d;  
     real *rot_x, *rot_y, *rot_z;
@@ -932,7 +934,9 @@ void execute_loaded_data(int j_fixed, int k_fixed, int l_fixed, dim3 dimGrid, di
     device_allocate_all_complex(Nx, Ny, Mz, 3, &ux_hat_d_shift, &uy_hat_d_shift, &uz_hat_d_shift);
     device_allocate_all_real(Nx, Ny, Nz, 3, &ux_d_plane, &uy_d_plane, &uz_d_plane);
     device_allocate_all_real(Nx, Ny, Nz, 3, &rot_x_d, &rot_y_d, &rot_z_d);
+    device_allocate_all_real(Nx, Ny, Nz, 3, &RHSx_d, &RHSy_d, &RHSz_d);
     allocate_real(Nx, Ny, Nz, 3, &rot_x, &rot_y, &rot_z);
+    allocate_real(Nx, Ny, Nz, 3, &RHSx, &RHSy, &RHSz);
 
 
     debug_plot_vector("normal.dat", x_0, y_0, z_0, rhs_x, rhs_y, rhs_z, 1.0);
@@ -949,6 +953,8 @@ void execute_loaded_data(int j_fixed, int k_fixed, int l_fixed, dim3 dimGrid, di
     sprintf(f1_name, "test_point.dat");        
     stream_in=fopen(f1_name, "r" );
     stream_out=fopen("test_point_out.dat", "w" );
+    stream_rhs=fopen("test_point_out_rhs.dat", "w" );
+
     for (int t = 0; t < number_of_intersections; ++t){
 
         //reading points file data
@@ -986,7 +992,7 @@ void execute_loaded_data(int j_fixed, int k_fixed, int l_fixed, dim3 dimGrid, di
                 steps=0;
                 stop_flag=false;
             }
-            if(count_flags==2){
+            if(count_flags==intersecitons){
                 stop_flag=true;
             }
             steps++;
@@ -1007,8 +1013,20 @@ void execute_loaded_data(int j_fixed, int k_fixed, int l_fixed, dim3 dimGrid, di
                 }
             }
         }
-        fprintf( stream_out, "\n");
+        real rhs_x_shift, rhs_y_shift, rhs_z_shift;
 
+        return_vector3_RHS(dimGrid,  dimBlock,  dimGrid_C, dimBlock_C, dx, dy, dz, Re, Nx, Ny,  Nz, Mz, ux_hat_d_plane, uy_hat_d_plane, uz_hat_d_plane,  fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d,  ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d, AM_12_d, AM_13_d, AM_23_d, ux_hat_d_shift, uy_hat_d_shift, uz_hat_d_shift, RHSx_d, RHSy_d, RHSz_d, RHSx, RHSy, RHSz, 0,  0, 0, &rhs_x_shift, &rhs_y_shift, &rhs_z_shift);
+
+        for(int j=0;j<Nx;j++){
+            for(int k=0;k<Ny;k++){
+                for(int l=0;l<Nz;l++){
+                    fprintf( stream_rhs, "%.16le %.16le %.16le ", RHSx[IN(j,k,l)], RHSy[IN(j,k,l)], RHSz[IN(j,k,l)]);
+                }
+            }
+        }       
+
+        fprintf( stream_out, "\n");
+        fprintf( stream_rhs, "\n");
         printf("\n");        
         //advance solution!!!
         //copy_arrays(dimGrid_C, dimBlock_C, Nx, Ny, Nz, ux_hat_d_plane, uy_hat_d_plane, uz_hat_d_plane, ux_hat_d, uy_hat_d, uz_hat_d);    
@@ -1017,7 +1035,7 @@ void execute_loaded_data(int j_fixed, int k_fixed, int l_fixed, dim3 dimGrid, di
     
     fclose(stream_in);
     fclose(stream_out);
-
+    fclose(stream_rhs);
    
 
     device_deallocate_all_complex(3, ux_hat_d_plane, uy_hat_d_plane, uz_hat_d_plane);
@@ -1025,12 +1043,15 @@ void execute_loaded_data(int j_fixed, int k_fixed, int l_fixed, dim3 dimGrid, di
     device_deallocate_all_complex(3, ux_hat_d_shift, uy_hat_d_shift, uz_hat_d_shift);
     device_deallocate_all_real(3, ux_d_plane, uy_d_plane, uz_d_plane);
     device_deallocate_all_real(3, rot_x_d, rot_y_d, rot_z_d);
+    device_deallocate_all_real(3, RHSx_d, RHSy_d, RHSz_d);
 
     free(ux);
     free(uy);
     free(uz);
 
-
+    free(RHSx);
+    free(RHSy);
+    free(RHSz);
     free(rot_x);
     free(rot_y);
     free(rot_z);

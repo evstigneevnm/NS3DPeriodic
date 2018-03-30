@@ -778,11 +778,11 @@ int n=(int)nn;
     for(int k=0;k<Ny;k++)
     for(int l=0;l<Mz;l++){
         //ux_hat_Re[IN(j,k,l)]+=Magnitude*(rand()/(1.0*RAND_MAX - 1.0)-rand()/(1.0*RAND_MAX - 1.0));
-        ux_hat_Im[IN(j,k,l)]+=Magnitude*(rand()/(1.0*RAND_MAX - 1.0)-rand()/(1.0*RAND_MAX - 1.0));
+        ux_hat_Im[IN(j,k,l)]+=Magnitude*(rand()/(1.0*RAND_MAX - 1.0));
         //uy_hat_Re[IN(j,k,l)]+=Magnitude*(rand()/(1.0*RAND_MAX - 1.0)-rand()/(1.0*RAND_MAX - 1.0));
-        uy_hat_Im[IN(j,k,l)]+=Magnitude*(rand()/(1.0*RAND_MAX - 1.0)-rand()/(1.0*RAND_MAX - 1.0));
+        uy_hat_Im[IN(j,k,l)]+=Magnitude*(rand()/(1.0*RAND_MAX - 1.0));
         //uz_hat_Re[IN(j,k,l)]+=Magnitude*(rand()/(1.0*RAND_MAX - 1.0)-rand()/(1.0*RAND_MAX - 1.0));
-        uz_hat_Im[IN(j,k,l)]+=Magnitude*(rand()/(1.0*RAND_MAX - 1.0)-rand()/(1.0*RAND_MAX - 1.0));
+        uz_hat_Im[IN(j,k,l)]+=Magnitude*(rand()/(1.0*RAND_MAX - 1.0));
     
     
 
@@ -854,7 +854,7 @@ int main (int argc, char *argv[])
 {
     int j, k, l, Nx=32, Ny=32, Nz=32, Mz=Nz/2+1;
 
-
+    srand ( time(NULL) );
     //if(argc!=13){
     if((argc<15)||(argc>18)){
         /*  
@@ -1260,6 +1260,11 @@ int main (int argc, char *argv[])
 
     if((CFile==2)||(Fourier_Initial_Conditions_flag==true)){
         printf("Using direct Fourier modes initialization.\n");
+        if(Perturbation>1.0e-15){
+            //printf("Adding perturbations to the direct Fourier modes initialization.\n");
+            //Fourier_Initial_perturbation(Perturbation, Nx, Ny, Nz, Mz, alpha, beta, nn, dx, dy, dz, ux_Re, ux_Im, uy_Re, uy_Im, uz_Re, uz_Im);
+        }
+
         all_double2Fourier(dimGrid_C, dimBlock_C, ux_Re_d, ux_Im_d, ux_hat_d, uy_Re_d, uy_Im_d, uy_hat_d, uz_Re_d, uz_Im_d, uz_hat_d, Nx, Ny, Mz);
     }
     if(Fourier_Initial_Conditions_flag==true){
@@ -1314,22 +1319,24 @@ int main (int argc, char *argv[])
 
         //real time step ends here
         
-        divergence_device(dimGrid_C, dimBlock_C, Nx, Ny, Mz, div_hat_d, ux_hat_d, uy_hat_d, uz_hat_d, kx_nabla_d, ky_nabla_d,  kz_nabla_d, 1.0, Re);
-        devergence_to_double(dimGrid, dimBlock, Nx, Ny, Nz, div_hat_d, div_pos_d);
+        //divergence_device(dimGrid_C, dimBlock_C, Nx, Ny, Mz, div_hat_d, ux_hat_d, uy_hat_d, uz_hat_d, kx_nabla_d, ky_nabla_d,  kz_nabla_d, 1.0, Re);
+        //devergence_to_double(dimGrid, dimBlock, Nx, Ny, Nz, div_hat_d, div_pos_d);
         
         Image_to_Domain(dimGrid, dimBlock, Nx, Ny, Nz, ux_d, ux_hat_d, uy_d, uy_hat_d, uz_d, uz_hat_d);
 
 
 
-        //Helmholz_Fourier_Filter(dimGrid, dimBlock,  dimGrid_C, dimBlock_C, Nx, Ny, Nz, Mz, Lx, Ly, Lz, ux_hat_d, uy_hat_d, uz_hat_d, ux_filt_hat_d, uy_filt_hat_d, uz_filt_hat_d, 1.0, ux_filt_d, uy_filt_d, uz_filt_d);
+        Helmholz_Fourier_Filter(dimGrid, dimBlock,  dimGrid_C, dimBlock_C, Nx, Ny, Nz, Mz, Lx, Ly, Lz, ux_hat_d, uy_hat_d, uz_hat_d, ux_filt_hat_d, uy_filt_hat_d, uz_filt_hat_d, 1.0, ux_filt_d, uy_filt_d, uz_filt_d);
 
         CutOff_Fourier_Filter(dimGrid, dimBlock,  dimGrid_C, dimBlock_C, Nx, Ny, Nz, Mz, Lx, Ly, Lz, ux_hat_d, uy_hat_d, uz_hat_d, ux_filt_hat_d, uy_filt_hat_d, uz_filt_hat_d, 0.1, ux_filt_d, uy_filt_d, uz_filt_d);
 
 
-        velocity_to_abs_device<<<dimGrid, dimBlock>>>(Nx,  Ny, Nz, ux_d, uy_d, uz_d, u_abs_d);
+        
 
-        if(DEBUG!=1)
+        if(DEBUG!=1){
+            velocity_to_abs_device<<<dimGrid, dimBlock>>>(Nx,  Ny, Nz, ux_d, uy_d, uz_d, u_abs_d);
             write_drop_files_from_device(drop, (t+1), Nx, Ny, Nz, ux, uy, uz, u_abs, div_pos, dx, dy, dz, ux_d, uy_d, uz_d, u_abs_d, div_pos_d);
+        }
         
 
         //TODO: lame file operation =( Fix this in the future!
@@ -1339,24 +1346,33 @@ int main (int argc, char *argv[])
 
         real energy=get_kinetic_energy(dimGrid, dimBlock, Nx, Ny, Nz, dx, dy, dz, ux_d, uy_d, uz_d, energy_d, energy_out1_d, energy_out2_d);
 
-        energy=energy/(2.0*PI*2.0*PI*2.0*PI/alpha);
+        //energy=energy/(2.0*PI*2.0*PI*2.0*PI/alpha);
 
         real dissipation=get_dissipation(dimGrid, dimBlock, Nx, Ny, Nz, dx, dy, dz, ux_d, uy_d, uz_d, dissipation_d, energy_out1_d, energy_out2_d);
 
-        dissipation=dissipation/(2.0*PI*2.0*PI*2.0*PI/alpha);
+        //dissipation=dissipation/(2.0*PI*2.0*PI*2.0*PI/alpha);
 
+        TotalTime+=dt;
 
-        host_device_real_cpy(&ux_loc, &(ux_d[IN(0,0,0)]), 1, 1, 1); //Nx/2-4,Ny/2-3,Nz/2-2
-        host_device_real_cpy(&uy_loc, &(uy_d[IN(0,0,0)]), 1, 1, 1);
-        host_device_real_cpy(&uz_loc, &(uz_d[IN(0,0,0)]), 1, 1, 1);
-        host_device_real_cpy(&div_loc, &(div_pos_d[IN(0,0,0)]), 1, 1, 1);       
+        host_device_real_cpy(&ux_loc, &(ux_d[IN(Nx/2-4,Ny/2-3,Nz/2-2)]), 1, 1, 1);
+        if(ux_loc!=ux_loc){
+            printf("\nnans!\n");
+        }
+       // if(t>int(timesteps*0.75)){
+       //     fprintf( stream, "%le %le %le\n", TotalTime, ux_loc, sqrt(energy)); 
+       // }
+//* 
+        host_device_real_cpy(&ux_loc, &(ux_d[IN(Nx/2-4,Ny/2-3,Nz/2-2)]), 1, 1, 1); //Nx/2-4,Ny/2-3,Nz/2-2
+        host_device_real_cpy(&uy_loc, &(uy_d[IN(Nx/2-4,Ny/2-3,Nz/2-2)]), 1, 1, 1);
+        host_device_real_cpy(&uz_loc, &(uz_d[IN(Nx/2-4,Ny/2-3,Nz/2-2)]), 1, 1, 1);
+        host_device_real_cpy(&div_loc, &(div_pos_d[IN(Nx/2-4,Ny/2-3,Nz/2-2)]), 1, 1, 1);       
         
-        host_device_real_cpy(&rot_x_loc, &(rot_x_d[IN(0,0,0)]), 1, 1, 1);
-        host_device_real_cpy(&rot_y_loc, &(rot_y_d[IN(0,0,0)]), 1, 1, 1);
-        host_device_real_cpy(&rot_z_loc, &(rot_z_d[IN(0,0,0)]), 1, 1, 1);
+        host_device_real_cpy(&rot_x_loc, &(rot_x_d[IN(Nx/2-4,Ny/2-3,Nz/2-2)]), 1, 1, 1);
+        host_device_real_cpy(&rot_y_loc, &(rot_y_d[IN(Nx/2-4,Ny/2-3,Nz/2-2)]), 1, 1, 1);
+        host_device_real_cpy(&rot_z_loc, &(rot_z_d[IN(Nx/2-4,Ny/2-3,Nz/2-2)]), 1, 1, 1);
         
         TotalTime+=dt;
-        fprintf( stream, "%e    %e  %e  %e  %e  %e  %e  %e ", TotalTime, ux_loc, uy_loc, uz_loc, rot_x_loc, rot_y_loc, rot_z_loc, energy);  //1 2 3 4 5 6 7 8
+        fprintf( stream, "%le %le %le %le %le %le %le %le ", TotalTime, ux_loc, uy_loc, uz_loc, rot_x_loc, rot_y_loc, rot_z_loc, energy);  //1 2 3 4 5 6 7 8
 
         host_device_real_cpy(&ux_loc, &(ux_d[IN(Nx/3,Ny/3,Nz/3)]), 1, 1, 1);
         host_device_real_cpy(&uy_loc, &(uy_d[IN(Nx/3,Ny/3,Nz/3)]), 1, 1, 1);
@@ -1367,7 +1383,7 @@ int main (int argc, char *argv[])
         host_device_real_cpy(&rot_y_loc, &(rot_y_d[IN(Nx/3,Ny/3,Nz/3)]), 1, 1, 1);
         host_device_real_cpy(&rot_z_loc, &(rot_z_d[IN(Nx/3,Ny/3,Nz/3)]), 1, 1, 1);   
         
-        fprintf( stream, "%e    %e  %e  %e  %e  %e  %e ", ux_loc, uy_loc, uz_loc, rot_x_loc, rot_y_loc, rot_z_loc, dissipation);    // 9 10 11 12 13 14 15
+        fprintf( stream, "%le %le %le %le %le %le %le ", ux_loc, uy_loc, uz_loc, rot_x_loc, rot_y_loc, rot_z_loc, dissipation);    // 9 10 11 12 13 14 15
 
     //high or low wavenumber analysis
     //  get_high_wavenumbers(dimGrid,  dimBlock, dimGrid_C,  dimBlock_C, Nx, Ny, Nz, Mz, ux_hat_d, uy_hat_d, uz_hat_d, ux_red_hat_d, uy_red_hat_d, uz_red_hat_d, u_temp_complex_d, ux_red_d, uy_red_d, uz_red_d, 1);
@@ -1381,7 +1397,7 @@ int main (int argc, char *argv[])
         host_device_real_cpy(&rot_y_loc, &(rot_y_d[IN(Nx/8,Ny/8,Nz/8)]), 1, 1, 1);
         host_device_real_cpy(&rot_z_loc, &(rot_z_d[IN(Nx/8,Ny/8,Nz/8)]), 1, 1, 1); 
 
-        fprintf( stream, "%e    %e  %e  %e  %e  %e  %e ", ux_loc, uy_loc, uz_loc, rot_x_loc, rot_y_loc, rot_z_loc, (energy-dissipation/Re)); //16 17 18 19 20 21 22 
+        fprintf( stream, "%le %le %le %le %le %le %le ", ux_loc, uy_loc, uz_loc, rot_x_loc, rot_y_loc, rot_z_loc, (energy-dissipation/Re)); //16 17 18 19 20 21 22 
 
 
 
@@ -1397,7 +1413,7 @@ int main (int argc, char *argv[])
         host_device_real_cpy(&rot_y_loc, &(rot_y_d[IN(Nx/3,Ny/3,Nz/3)]), 1, 1, 1);
         host_device_real_cpy(&rot_z_loc, &(rot_z_d[IN(Nx/3,Ny/3,Nz/3)]), 1, 1, 1); 
 
-        fprintf( stream, "%e    %e  %e  %e  %e  %e  %e ", ux_loc, uy_loc,  uz_loc, rot_x_loc, rot_y_loc, rot_z_loc, energy); //23 24 25 26 27 28 29
+        fprintf( stream, "%le %le %le %le %le %le %le ", ux_loc, uy_loc,  uz_loc, rot_x_loc, rot_y_loc, rot_z_loc, energy); //23 24 25 26 27 28 29
         
 //Fourier hormonics from here on
         int local_Nz=Nz;
@@ -1413,7 +1429,7 @@ int main (int argc, char *argv[])
         host_device_real_cpy(&rot_z_loc, &(uz_Im_d[IN(Nx-6,Ny-6,Nz-6)]), 1, 1, 1);
         host_device_real_cpy(&div_loc, &(div_pos_d[IN(Nx-6,Ny-6,Nz-6)]), 1, 1, 1);
 
-        fprintf( stream, "%e    %e  %e  %e  %e  %e  %e ", ux_loc, rot_x_loc, uy_loc, rot_y_loc, uz_loc, rot_z_loc, dissipation); //30 31 32 33 34 35 36
+        fprintf( stream, "%le %le %le %le %le %le %le ", ux_loc, rot_x_loc, uy_loc, rot_y_loc, uz_loc, rot_z_loc, dissipation); //30 31 32 33 34 35 36
 
         host_device_real_cpy(&ux_loc, &(ux_Im_d[IN(Nx/5,Ny/4-3,Nz/4-1)]), 1, 1, 1);
         host_device_real_cpy(&rot_x_loc, &(ux_Im_d[IN(Nx/5,Ny/5,Nz/5)]), 1, 1, 1);
@@ -1423,19 +1439,20 @@ int main (int argc, char *argv[])
         host_device_real_cpy(&rot_z_loc, &(uz_Im_d[IN(Nx/5,Ny/5,Nz/5)]), 1, 1, 1);
         host_device_real_cpy(&div_loc, &(ux_Im_d[IN(2,2,2)]), 1, 1, 1);
 
-        fprintf( stream, "%e    %e  %e  %e  %e  %e  %e ", ux_loc, rot_x_loc, uy_loc, rot_y_loc, uz_loc, rot_z_loc, div_loc); //37 38 39 40 41 42 43
+        fprintf( stream, "%le %le %le %le %le %le %le ", ux_loc, rot_x_loc, uy_loc, rot_y_loc, uz_loc, rot_z_loc, div_loc); //37 38 39 40 41 42 43
 
-        host_device_real_cpy(&ux_loc, &(ux_Im_d[IN(0,0,0)]), 1, 1, 1); //44
-        host_device_real_cpy(&rot_x_loc, &(ux_Im_d[IN(1,0,0)]), 1, 1, 1); //45
+        host_device_real_cpy(&ux_loc, &(ux_Im_d[IN(1,0,0)]), 1, 1, 1); //44
+        host_device_real_cpy(&rot_x_loc, &(ux_Im_d[IN(0,0,0)]), 1, 1, 1); //45
         host_device_real_cpy(&uy_loc, &(ux_Im_d[IN(1,1,0)]), 1, 1, 1); //46
         host_device_real_cpy(&rot_y_loc, &(ux_Im_d[IN(1,1,1)]), 1, 1, 1); //47
         host_device_real_cpy(&uz_loc, &(ux_Im_d[IN(Nx-1,0,0)]), 1, 1, 1); //48
         host_device_real_cpy(&rot_z_loc, &(ux_Im_d[IN(Nx-1,Ny-1,0)]), 1, 1, 1); //49
         host_device_real_cpy(&div_loc, &(ux_Im_d[IN(Nx-1,Ny-1,Nz-1)]), 1, 1, 1); //50
 
-        fprintf( stream, "%e    %e  %e  %e  %e  %e  %e\n", ux_loc, rot_x_loc, uy_loc, rot_y_loc, uz_loc, rot_z_loc, div_loc); //44 45 46 47 48 49 50
+        fprintf( stream, "%le %le %le %le %le %le %le\n", ux_loc, rot_x_loc, uy_loc, rot_y_loc, uz_loc, rot_z_loc, div_loc); //44 45 46 47 48 49 50
+        
         Nz=local_Nz;
-
+//*/
         //Add random perturbation during execution
         if((t+1)%drop==0){
             //copy Fourier modes to device
@@ -1461,8 +1478,8 @@ int main (int argc, char *argv[])
 
         //lame file operation ends here.
 
-        if(t%217==0)
-            printf("run:---[%.03f\%]---dt=%.03e---U=%.03e---\r",(t+1)/(1.0*timesteps)*100.0,dt,ux_loc);     
+        if(t%1000==0)
+            printf("run:---[%.03f\%]---dt=%.03e---U=%.03e---\r",(t+1)/(1.0*timesteps)*100.0, dt, ux_loc);     
         
 
         //Shapiro test case
@@ -1486,11 +1503,13 @@ int main (int argc, char *argv[])
 
   //  execute_return_map(int(Nx/3.0), int(Ny/3.0), int(Nz/3.0), dimGrid, dimBlock, dimGrid_C, dimBlock_C, dx, dy, dz, dt, Re, Nx, Ny, Nz, Mz, ux_hat_d, uy_hat_d, uz_hat_d, ux_hat_d_1, uy_hat_d_1, uz_hat_d_1,  ux_hat_d_2, uy_hat_d_2, uz_hat_d_2,  ux_hat_d_3, uy_hat_d_3, uz_hat_d_3,  fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d, ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d, AM_12_d, AM_13_d, AM_23_d);
     
+    //printf("\n========== executing secion ==============\n");
    //execute_sections(int(Nx/3.0), int(Ny/3.0), int(Nz/3.0), dimGrid, dimBlock, dimGrid_C, dimBlock_C, dx, dy, dz, dt, Re, Nx, Ny, Nz, Mz, ux_hat_d, uy_hat_d, uz_hat_d, ux_hat_d_1, uy_hat_d_1, uz_hat_d_1,  ux_hat_d_2, uy_hat_d_2, uz_hat_d_2,  ux_hat_d_3, uy_hat_d_3, uz_hat_d_3,  fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d, ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d, AM_12_d, AM_13_d, AM_23_d);
     
-    printf("\n========== executing return map ==============\n");
-
-    execute_loaded_data(int(Nx/3.0), int(Ny/3.0), int(Nz/3.0), dimGrid, dimBlock, dimGrid_C, dimBlock_C, dx, dy, dz, dt, Re, Nx, Ny, Nz, Mz, ux_hat_d, uy_hat_d, uz_hat_d, ux_hat_d_1, uy_hat_d_1, uz_hat_d_1,  ux_hat_d_2, uy_hat_d_2, uz_hat_d_2,  ux_hat_d_3, uy_hat_d_3, uz_hat_d_3,  fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d, ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d, AM_12_d, AM_13_d, AM_23_d);
+    
+    //printf("\n========== executing return map ==============\n");
+    //unsigned int intersecitons=2;
+    //execute_loaded_data(intersecitons, int(Nx/3.0), int(Ny/3.0), int(Nz/3.0), dimGrid, dimBlock, dimGrid_C, dimBlock_C, dx, dy, dz, dt, Re, Nx, Ny, Nz, Mz, ux_hat_d, uy_hat_d, uz_hat_d, ux_hat_d_1, uy_hat_d_1, uz_hat_d_1,  ux_hat_d_2, uy_hat_d_2, uz_hat_d_2,  ux_hat_d_3, uy_hat_d_3, uz_hat_d_3,  fx_hat_d, fy_hat_d, fz_hat_d, Qx_hat_d, Qy_hat_d, Qz_hat_d, div_hat_d, kx_nabla_d, ky_nabla_d, kz_nabla_d, din_diffusion_d, din_poisson_d, AM_11_d, AM_22_d, AM_33_d, AM_12_d, AM_13_d, AM_23_d);
 
 
 
